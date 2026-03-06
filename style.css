@@ -1,20 +1,20 @@
-/* --- CONFIGURARE GENERALA --- */
+/* --- RESET & CULORI DE BAZĂ --- */
 :root {
-    --bg: #0a0a0a;
-    --card: #161616;
-    --input: #000000;
-    --primary: #d4af37; /* GOLD */
-    --red: #ff4d4d;
-    --green: #4CAF50;
-    --text: #ffffff;
-    --text-dim: #888888;
+    --bg: #0d1117;
+    --card: #161b22;
+    --primary: #58a6ff;
+    --yellow: #f1e05a;
+    --red: #ff7b72;
+    --green: #7ee787;
+    --text: #c9d1d9;
+    --border: #30363d;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
@@ -22,210 +22,202 @@ body {
     color: var(--text);
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    padding: 10px;
     min-height: 100vh;
-    padding: 20px;
 }
 
-.hidden { display: none !important; }
-
-/* --- CARDURI SI CONTAINERE --- */
-.card {
+/* --- NAVIGARE --- */
+.navbar {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
     background: var(--card);
-    padding: 25px;
-    border-radius: 12px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.navbar button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 10px 5px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    text-transform: uppercase;
+}
+
+.navbar button:hover {
+    background: var(--border);
+}
+
+/* --- PAGINI ȘI CARDURI --- */
+.page {
     width: 100%;
-    max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    text-align: center;
+}
+
+.hidden {
+    display: none;
 }
 
 .card-scout {
     background: var(--card);
     padding: 20px;
     border-radius: 12px;
-    width: 100%;
-    max-width: 480px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-/* --- LOGO SI TITLURI --- */
-.logo {
-    font-size: 28px;
-    font-weight: 800;
-    margin-bottom: 20px;
-    letter-spacing: 2px;
-}
-.logo span { color: var(--primary); }
-
-h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; color: var(--text-dim); }
-
-/* --- INPUTURI SI SELECTURI --- */
+/* --- INPUTS --- */
 .scout-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    flex: 1;
+    margin-bottom: 15px;
 }
 
 .input-group label {
     display: block;
-    color: var(--primary);
     font-size: 10px;
     font-weight: bold;
-    text-align: left;
+    color: #8b949e;
     margin-bottom: 5px;
 }
 
-input[type="number"], 
-input[type="text"], 
-input[type="email"], 
-select {
+.input-group input, .input-group select {
     width: 100%;
-    padding: 14px;
-    background: var(--input);
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
+    background: #0d1117;
+    border: 1px solid var(--border);
     color: white;
+    padding: 12px;
+    border-radius: 6px;
     font-size: 16px;
-    margin-bottom: 10px;
-    outline: none;
 }
 
-input:focus { border-color: var(--primary); }
-
-/* --- SECTIUNI COUNTER (STILUL VECHI) --- */
+/* --- COUNTER CARDS (Cele 3 linii cerute) --- */
 .counter-card {
-    background: #1f1f1f;
-    margin: 12px 0;
-    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
     border-radius: 8px;
-    border-left: 5px solid transparent;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--border);
 }
 
-.yellow-border { border-left-color: var(--primary); }
+.yellow-border { border-left-color: var(--yellow); }
 .red-border { border-left-color: var(--red); }
 .green-border { border-left-color: var(--green); }
 
-.label-yellow { color: var(--primary); font-size: 11px; font-weight: bold; display: block; text-align: left; }
-.label-red { color: var(--red); font-size: 11px; font-weight: bold; display: block; text-align: left; }
-.label-green { color: var(--green); font-size: 11px; font-weight: bold; display: block; text-align: left; }
+.label-yellow { color: var(--yellow); font-size: 11px; font-weight: bold; }
+.label-red { color: var(--red); font-size: 11px; font-weight: bold; }
+.label-green { color: var(--green); font-size: 11px; font-weight: bold; }
 
 .action-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 8px;
 }
 
-/* --- BUTOANE --- */
+/* BUTOANE MARI PLUS */
 .btn-main {
-    flex: 1;
-    padding: 16px;
+    flex: 2.5;
+    padding: 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-weight: 900;
     font-size: 14px;
     cursor: pointer;
-    margin-right: 15px;
-    transition: opacity 0.2s;
+    text-transform: uppercase;
+    transition: filter 0.1s, transform 0.1s;
 }
 
-.btn-main:active { transform: scale(0.98); }
+.btn-main:active { transform: scale(0.96); filter: brightness(1.2); }
 
-.btn-yellow { background: var(--primary); color: #000; }
-.btn-red { background: var(--red); color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
+.btn-yellow { background: var(--yellow); color: #000; }
+.btn-red { background: var(--red); color: #000; }
+.btn-green { background: var(--green); color: #000; }
 
+/* CIFRA DIN MIJLOC */
+.count-val {
+    flex: 1;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    min-width: 45px;
+}
+
+/* BUTONUL DE MINUS */
 .btn-undo {
-    background: #2a2a2a;
-    color: #aaa;
-    border: 1px solid #3a3a3a;
-    padding: 10px 15px;
+    flex: 1;
+    background: #21262d;
+    color: white;
+    border: 1px solid var(--border);
+    padding: 18px;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 18px;
+    font-weight: bold;
     cursor: pointer;
+}
+
+.btn-undo:active { background: #30363d; }
+
+/* --- CHECKBOX & SUBMIT --- */
+.checkbox-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(88, 166, 255, 0.1);
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid rgba(88, 166, 255, 0.2);
+}
+
+.checkbox-card input {
+    width: 20px;
+    height: 20px;
 }
 
 .btn-generate {
     width: 100%;
-    padding: 20px;
+    margin-top: 20px;
+    padding: 18px;
     background: var(--primary);
-    color: #000;
+    color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 18px;
-    font-weight: 800;
-    margin-top: 25px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
     text-transform: uppercase;
 }
 
-/* --- VALORI AFISATE --- */
-.count-val {
-    font-size: 36px;
-    font-weight: 900;
-    color: #fff;
-    min-width: 50px;
+/* --- SUCCESS SCREEN --- */
+.card {
+    background: var(--card);
+    padding: 40px 20px;
+    border-radius: 12px;
     text-align: center;
+    border: 1px solid var(--border);
 }
 
-/* --- CHECKBOX SI ALTELE --- */
-.checkbox-card {
-    background: #1f1f1f;
-    padding: 18px;
-    border-radius: 8px;
-    margin: 15px 0;
-    border-left: 5px solid var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    cursor: pointer;
-}
-
-.checkbox-card input[type="checkbox"] {
-    width: 24px;
-    height: 24px;
-    accent-color: var(--primary);
-}
-
-.rp-input {
-    border: 1px solid var(--primary) !important;
-    text-align: center;
-    font-size: 20px !important;
-    font-weight: bold;
-}
-
-/* --- ECRAN SUCCES (BIFA) --- */
 .checkmark {
-    font-size: 120px;
-    color: var(--primary);
-    margin-bottom: 20px;
+    font-size: 60px;
+    color: var(--green);
     display: block;
-    animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes pop {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* --- NAVBAR --- */
-.navbar {
-    display: flex;
-    gap: 10px;
     margin-bottom: 20px;
-    overflow-x: auto;
-    padding-bottom: 10px;
 }
 
-.navbar button {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 20px;
-    white-space: nowrap;
-    cursor: pointer;
+/* --- RESPONSIVE --- */
+@media (max-width: 400px) {
+    .btn-main { padding: 15px; font-size: 12px; }
+    .btn-undo { padding: 15px; }
 }
-
-.navbar button:hover { background: var(--primary); color: black; }
