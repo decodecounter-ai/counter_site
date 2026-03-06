@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECODE Scouting System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="auth-box" class="card">
+            <h1 class="logo">DECODE <span>Portal</span></h1>
+            <div class="input-group">
+                <input type="number" id="team-id" placeholder="Număr Echipă (ex: 19121)">
+                <input type="text" id="token-id" placeholder="Token (pentru Login)">
+                <input type="email" id="email-id" placeholder="Email (pentru Cont Nou)">
+            </div>
+            <div class="btn-group">
+                <button onclick="api('login')" class="btn-main">Login</button>
+                <button onclick="api('register')" class="btn-sec">Creează Cont</button>
+            </div>
+            <p id="auth-status"></p>
+        </div>
+
+        <div id="main-box" class="hidden">
+            <nav class="navbar">
+                <button onclick="showPage('scout')">Uplink (Scout)</button>
+                <button onclick="showPage('intel')">Unified Intel</button>
+                <button onclick="showPage('database')">My Records</button>
+                <button onclick="location.reload()" class="btn-logout">Logout</button>
+            </nav>
+
+            <div id="page-scout" class="page">
+                <div class="card">
+                    <h2>📤 Trimite Date Meci</h2>
+                    <input type="number" id="up-target" placeholder="Echipa Observată">
+                    <div class="grid-inputs">
+                        <input type="number" id="up-rap" placeholder="R ap">
+                        <input type="number" id="up-rdep" placeholder="R dep">
+                        <input type="number" id="up-aap" placeholder="A ap">
+                        <input type="number" id="up-adep" placeholder="A dep">
+                    </div>
+                    <input type="number" id="up-scor" placeholder="Scor Total Meci">
+                    <input type="text" id="up-autos" placeholder="Secvență Auto (ex: L,M,R,L)">
+                    <button onclick="api('uplink')" class="btn-main">Trimite în Cloud</button>
+                </div>
+            </div>
+
+            <div id="page-intel" class="page hidden">
+                <div class="card">
+                    <h2>🔍 Deep Scan Adversar</h2>
+                    <div class="search-bar">
+                        <input type="number" id="search-target" placeholder="Introdu număr echipă">
+                        <button onclick="api('intel')">Analizează</button>
+                    </div>
+                    <div id="intel-results"></div>
+                </div>
+            </div>
+
+            <div id="page-database" class="page hidden">
+                <div class="card wide">
+                    <h2>📋 Istoricul Echipei Tale</h2>
+                    <div id="table-container" class="scroll-table">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
