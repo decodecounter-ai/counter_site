@@ -1,67 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE Portal</title>
-    <link rel="stylesheet" href="style.css">
+    <title>DECODE Scouting</title>
+    <script>
+        // Verificăm dacă există sesiune activă
+        window.onload = function() {
+            const team = sessionStorage.getItem('team');
+            const token = sessionStorage.getItem('token');
+
+            if (team && token) {
+                window.location.href = "dashboard.html";
+            } else {
+                window.location.href = "login.html";
+            }
+        }
+    </script>
 </head>
-<body>
-    <div id="app">
-        <div id="auth-box" class="card">
-            <h1 class="logo">DECODE <span>Portal</span></h1>
-            <div class="input-group">
-                <input type="number" id="team-id" placeholder="Team Number (ex: 19121)">
-                <input type="text" id="token-id" placeholder="Token (for Login)">
-                <input type="email" id="email-id" placeholder="Email (for Sign Up)">
-            </div>
-            <button onclick="api('login')" class="btn-login">Login</button>
-            <button onclick="api('register')" class="btn-signup">Sign Up</button>
-            <p id="status-msg"></p>
-        </div>
-
-        <div id="main-box" class="hidden">
-            <nav class="navbar">
-                <button onclick="showPage('scout')">Uplink</button>
-                <button onclick="showPage('intel')">Unified Intel</button>
-                <button onclick="showPage('database')">My Records</button>
-            </nav>
-
-            <div id="page-scout" class="page">
-                <div class="card">
-                    <h2>📤 Upload Match Data</h2>
-                    <input type="number" id="up-target" placeholder="Target Team">
-                    <div class="grid">
-                        <input type="number" id="up-rap" placeholder="R ap">
-                        <input type="number" id="up-rdep" placeholder="R dep">
-                        <input type="number" id="up-aap" placeholder="A ap">
-                        <input type="number" id="up-adep" placeholder="A dep">
-                    </div>
-                    <input type="number" id="up-scor" placeholder="Total Score">
-                    <input type="text" id="up-autos" placeholder="Auto (L,M,R)">
-                    <button onclick="api('uplink')" class="btn-login">Send Data</button>
-                </div>
-            </div>
-
-            <div id="page-intel" class="page hidden">
-                <div class="card">
-                    <h2>🔍 Unified Search</h2>
-                    <div class="search-row">
-                        <input type="number" id="search-target" placeholder="Team ID">
-                        <button onclick="api('intel')">Scan</button>
-                    </div>
-                    <div id="intel-results"></div>
-                </div>
-            </div>
-
-            <div id="page-database" class="page hidden">
-                <div class="card wide">
-                    <h2>📋 Team Records</h2>
-                    <div id="table-container" class="scroll-table"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script src="script.js"></script>
+<body style="background: #0f111a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
+    <p>Loading DECODE Portal...</p>
 </body>
 </html>
