@@ -1,124 +1,213 @@
-<div id="page-scout" class="page card-scout">
-    <div class="scout-header">
-        <div class="input-group">
-            <label>TEAM ID</label>
-            <input type="number" id="up-target" placeholder="20000">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECODE - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" style="width: 100%; max-width: 480px;">
+        <nav class="navbar">
+            <button onclick="showPage('scout')">UPLINK</button>
+            <button onclick="showPage('intel')">INTEL</button>
+            <button onclick="showPage('records')">DATABASE</button>
+            <button onclick="logout()" style="color: #ff4d4d;">EXIT</button>
+        </nav>
+
+        <div id="page-scout" class="page card-scout">
+            <div class="scout-header">
+                <div class="input-group">
+                    <label>TEAM ID</label>
+                    <input type="number" id="up-target" placeholder="20000">
+                </div>
+                <div class="input-group">
+                    <label>MATCH #</label>
+                    <input type="number" id="up-match" value="1">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>ALLIANCE POSITION</label>
+                <select id="up-pos">
+                    <option value="Red-1">Red 1</option>
+                    <option value="Red-2">Red 2</option>
+                    <option value="Blue-1">Blue 1</option>
+                    <option value="Blue-2">Blue 2</option>
+                </select>
+            </div>
+
+            <div class="counter-card yellow-border">
+                <label class="label-yellow">R AP SCORE</label>
+                <div class="action-row">
+                    <button class="btn-main btn-yellow" onclick="score('rap', 'P')">+ PIECE</button>
+                    <button class="btn-main btn-red" onclick="score('rap', 'M')">+ MISS</button>
+                    <div class="display-box">
+                        <span id="txt-rap">0(0)</span>
+                        <button class="btn-undo-mini" onclick="undo('rap')">Undo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="counter-card yellow-border">
+                <label class="label-yellow">R DEP SCORE</label>
+                <div class="action-row">
+                    <button class="btn-main btn-yellow" onclick="score('rdep', 'P')">+ PIECE</button>
+                    <button class="btn-main btn-red" onclick="score('rdep', 'M')">+ MISS</button>
+                    <div class="display-box">
+                        <span id="txt-rdep">0(0)</span>
+                        <button class="btn-undo-mini" onclick="undo('rdep')">Undo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="counter-card green-border">
+                <label class="label-green">A AP SCORE</label>
+                <div class="action-row">
+                    <button class="btn-main btn-green" onclick="score('aap', 'P')">+ PIECE</button>
+                    <button class="btn-main btn-red" onclick="score('aap', 'M')">+ MISS</button>
+                    <div class="display-box">
+                        <span id="txt-aap">0(0)</span>
+                        <button class="btn-undo-mini" onclick="undo('aap')">Undo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="counter-card green-border">
+                <label class="label-green">A DEP SCORE</label>
+                <div class="action-row">
+                    <button class="btn-main btn-green" onclick="score('adep', 'P')">+ PIECE</button>
+                    <button class="btn-main btn-red" onclick="score('adep', 'M')">+ MISS</button>
+                    <div class="display-box">
+                        <span id="txt-adep">0(0)</span>
+                        <button class="btn-undo-mini" onclick="undo('adep')">Undo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkbox-card">
+                <input type="checkbox" id="up-park">
+                <label>ASCENT / PARK SUCCESS (P)</label>
+            </div>
+
+            <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
         </div>
-        <div class="input-group">
-            <label>MATCH #</label>
-            <input type="number" id="up-match" value="1">
+
+        <div id="page-intel" class="page card hidden">
+            <h2>Deep Intel</h2>
+            <input type="number" id="search-target" placeholder="Enter Team #">
+            <button class="btn-generate" onclick="searchTeam()">SEARCH DATABASE</button>
+            <div id="intel-results" style="margin-top:20px; text-align:left;"></div>
+        </div>
+
+        <div id="page-records" class="page card hidden">
+            <h2>Your Team Records</h2>
+            <button class="btn-undo" onclick="fetchMyData()">REFRESH DATA</button>
+            <div id="db-results" style="margin-top:20px; font-size: 12px; overflow-x: auto;"></div>
+        </div>
+
+        <div id="success-screen" class="page card hidden">
+            <span class="checkmark">✓</span>
+            <h2>Report Sent!</h2>
+            <p style="color:#888; margin-bottom: 20px;">Data uplinked to Sheets.</p>
+            <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
         </div>
     </div>
 
-    <label>ALLIANCE POSITION</label>
-    <select id="up-pos">
-        <option value="RED - Aproape">RED - Aproape</option>
-        <option value="RED - Departe">RED - Departe</option>
-        <option value="BLUE - Aproape">BLUE - Aproape</option>
-        <option value="BLUE - Departe">BLUE - Departe</option>
-    </select>
+    <script src="config.js"></script>
+    <script>
+        // --- LOGICA COUNTER ---
+        let stats = {
+            rap: { s: 0, m: 0 },
+            rdep: { s: 0, m: 0 },
+            aap: { s: 0, m: 0 },
+            adep: { s: 0, m: 0 }
+        };
 
-    <div class="counter-card yellow-border">
-        <label class="label-yellow">AUTO SCORED</label>
-        <div class="action-row">
-            <button class="btn-main btn-yellow" onclick="updateCounter('auto-s', 1)">+ PIECE</button>
-            <span class="count-val" id="auto-s">0</span>
-            <button class="btn-undo" onclick="updateCounter('auto-s', -1)">Undo</button>
-        </div>
-    </div>
-
-    <div class="counter-card red-border">
-        <label class="label-red">AUTO MISSED</label>
-        <div class="action-row">
-            <button class="btn-main btn-red" onclick="updateCounter('auto-m', 1)">+ MISS</button>
-            <span class="count-val" id="auto-m">0</span>
-            <button class="btn-undo" onclick="updateCounter('auto-m', -1)">Undo</button>
-        </div>
-    </div>
-
-    <div class="counter-card green-border">
-        <label class="label-green">TELEOP PIECES</label>
-        <div class="action-row">
-            <button class="btn-main btn-green" onclick="updateCounter('tele', 1)">+ PIECE</button>
-            <span class="count-val" id="tele">0</span>
-            <button class="btn-undo" onclick="updateCounter('tele', -1)">Undo</button>
-        </div>
-    </div>
-
-    <div class="checkbox-card">
-        <input type="checkbox" id="up-park">
-        <label>ASCENT / PARK SUCCESS</label>
-    </div>
-
-    <label>RP VALUE</label>
-    <input type="number" id="up-rp" value="0" class="rp-input">
-
-    <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
-</div>
-
-<div id="success-screen" class="page card hidden" style="text-align:center; padding: 50px 20px;">
-    <div class="checkmark">✓</div>
-    <h2 style="color:white">Report Sent!</h2>
-    <p style="color:#aaa">Data has been uplinked to your sheet.</p>
-    <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
-</div>
-
-<script>
-function updateCounter(id, val) {
-    let el = document.getElementById(id);
-    let current = parseInt(el.innerText);
-    if(current + val >= 0) el.innerText = current + val;
-}
-
-async function sendData() {
-    const target = document.getElementById('up-target').value;
-    if(!target) return alert("Please enter Team ID");
-
-    const btn = document.getElementById('btn-submit');
-    btn.innerText = "UPLINKING...";
-    btn.disabled = true;
-
-    const pos = document.getElementById('up-pos').value;
-    // Formatare prefix: RED - Aproape -> RED_A
-    const prefix = pos.includes("RED") ? (pos.includes("Aproape") ? "RED_A" : "RED_D") : (pos.includes("Aproape") ? "BLUE_A" : "BLUE_D");
-    
-    // Concatenare Autos pentru Col G
-    const fullAutos = `${prefix}-S:${valText('auto-s')}|M:${valText('auto-m')}`;
-
-    const params = new URLSearchParams({
-        action: 'uplink',
-        myTeam: sessionStorage.getItem('team'),
-        myToken: sessionStorage.getItem('token'),
-        target: target,
-        autoScored: valText('auto-s'),
-        autoMissed: valText('auto-m'),
-        teleop: valText('tele'),
-        rp: document.getElementById('up-rp').value,
-        matchNum: document.getElementById('up-match').value,
-        fullAutos: fullAutos,
-        position: pos,
-        park: document.getElementById('up-park').checked ? "YES" : "NO"
-    });
-
-    try {
-        const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
-        const data = await res.json();
-        if(data.success) {
-            document.getElementById('page-scout').classList.add('hidden');
-            document.getElementById('success-screen').classList.remove('hidden');
+        function score(key, type) {
+            if(type === 'P') stats[key].s++; else stats[key].m++;
+            renderBox(key);
         }
-    } catch(e) { alert("Connection Error!"); }
-    finally { btn.innerText = "GENERATE REPORT"; btn.disabled = false; }
-}
 
-function valText(id) { return document.getElementById(id).innerText; }
-function resetScout() {
-    document.getElementById('auto-s').innerText = "0";
-    document.getElementById('auto-m').innerText = "0";
-    document.getElementById('tele').innerText = "0";
-    document.getElementById('up-target').value = "";
-    document.getElementById('up-park').checked = false;
-    document.getElementById('success-screen').classList.add('hidden');
-    document.getElementById('page-scout').classList.remove('hidden');
-}
-</script>
+        function undo(key) {
+            if(stats[key].s > 0) stats[key].s--;
+            else if(stats[key].m > 0) stats[key].m--;
+            renderBox(key);
+        }
+
+        function renderBox(key) {
+            let s = stats[key].s;
+            let total = s + stats[key].m;
+            document.getElementById(`txt-${key}`).innerText = `${s}(${total})`;
+        }
+
+        // --- NAVIGARE ---
+        function showPage(p) {
+            document.querySelectorAll('.page').forEach(div => div.classList.add('hidden'));
+            document.getElementById('page-' + p).classList.remove('hidden');
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
+
+        // --- TRIMITERE DATE ---
+        async function sendData() {
+            const target = document.getElementById('up-target').value;
+            if(!target) return alert("Please enter Team ID");
+
+            const btn = document.getElementById('btn-submit');
+            const isParked = document.getElementById('up-park').checked;
+            const pSuffix = isParked ? "(P)" : "";
+
+            btn.innerText = "UPLINKING...";
+            btn.disabled = true;
+
+            const format = (key) => `${stats[key].s}(${stats[key].s + stats[key].m})${pSuffix}`;
+
+            const params = new URLSearchParams({
+                action: 'uplink',
+                myTeam: sessionStorage.getItem('team'),
+                myToken: sessionStorage.getItem('token'),
+                target: target,
+                rap: format('rap'),
+                rdep: format('rdep'),
+                aap: format('aap'),
+                adep: format('adep'),
+                match: document.getElementById('up-match').value,
+                pos: document.getElementById('up-pos').value,
+                park: isParked ? "YES" : "NO",
+                autos: `R:${format('rap')}|A:${format('adep')}`
+            });
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+                const data = await res.json();
+                if(data.success) {
+                    document.getElementById('page-scout').classList.add('hidden');
+                    document.getElementById('success-screen').classList.remove('hidden');
+                }
+            } catch(e) { alert("Error!"); }
+            finally { btn.innerText = "GENERATE REPORT"; btn.disabled = false; }
+        }
+
+        function resetScout() {
+            stats = { rap: {s:0,m:0}, rdep: {s:0,m:0}, aap: {s:0,m:0}, adep: {s:0,m:0} };
+            ['rap','rdep','aap','adep'].forEach(k => renderBox(k));
+            document.getElementById('up-target').value = "";
+            document.getElementById('up-park').checked = false;
+            document.getElementById('success-screen').classList.add('hidden');
+            document.getElementById('page-scout').classList.remove('hidden');
+        }
+
+        // --- INTEL & DATABASE (STUB) ---
+        async function searchTeam() {
+            const target = document.getElementById('search-target').value;
+            const res = await fetch(`${SCRIPT_URL}?action=intel&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}&target=${target}`);
+            const data = await res.json();
+            const div = document.getElementById('intel-results');
+            if(data.success) {
+                div.innerHTML = data.history.map(r => `<div class="counter-card" style="border-left-color:var(--primary)">Match ${r[5]}: ${r[1]} / ${r[2]} / ${r[3]}</div>`).join('');
+            } else { div.innerText = "No data found."; }
+        }
+    </script>
+</body>
+</html>
