@@ -1,58 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Login</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="card">
-        <h1 class="logo">DECODE <span>Portal</span></h1>
-        <h2>Login</h2>
-        <input type="number" id="team-id" placeholder="Team Number">
-        <input type="text" id="token-id" placeholder="Access Token (ex: TK-ABC123)">
-        <button onclick="handleLogin()">Login</button>
-        <p id="status" style="color:#e63946; min-height:20px;"></p>
-        <p>New team? <a href="signup.html">Sign up here</a></p>
-    </div>
-    <script src="config.js"></script>
-    <script>
-        async function handleLogin() {
-            const id = document.getElementById('team-id').value.trim();
-            const tk = document.getElementById('token-id').value.trim();
-            const btn = document.querySelector('button');
-            const status = document.getElementById('status');
+<script src="config.js"></script>
+<script>
+    function handleLogin() {
+        const id = document.getElementById('team-id').value;
+        const tk = document.getElementById('token-id').value;
+        
+        const script = document.createElement('script');
+        script.src = `${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}&callback=loginCallback`;
+        document.body.appendChild(script);
+        script.onload = () => document.body.removeChild(script);
+    }
 
-            if (!id || !tk) return status.innerText = "Please fill all fields.";
-
-            btn.innerText = "Verifying...";
-            btn.disabled = true;
-            status.innerText = "";
-
-            try {
-                const url = `${SCRIPT_URL}?action=login&teamId=${encodeURIComponent(id)}&token=${encodeURIComponent(tk)}`;
-                const res = await fetch(url, {
-                    method: 'GET',
-                    mode: 'cors'
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    sessionStorage.setItem('team', id);
-                    sessionStorage.setItem('token', tk);
-                    window.location.href = "dashboard.html";
-                } else {
-                    status.innerText = "Invalid team number or token.";
-                }
-            } catch(e) {
-                // Fallback: daca CORS blocheaza, incercam no-cors cu redirect direct
-                status.innerText = "Verifying credentials...";
-                sessionStorage.setItem('team', id);
-                sessionStorage.setItem('token', tk);
-                window.location.href = "dashboard.html";
-            }
+    function loginCallback(data) {
+        if(data.success) {
+            sessionStorage.setItem('team', document.getElementById('team-id').value);
+            sessionStorage.setItem('token', document.getElementById('token-id').value);
+            window.location.href = "dashboard.html";
+        } else {
+            alert("Invalid credentials!");
         }
-    </script>
-</body>
-</html>
+    }
+</script>
