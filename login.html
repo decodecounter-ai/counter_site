@@ -11,14 +11,13 @@
         <h1 class="logo">DECODE <span>Portal</span></h1>
         <h2>Login</h2>
         <input type="number" id="team-id" placeholder="Team Number">
-        <input type="text" id="token-id" placeholder="Your Token">
+        <input type="text" id="token-id" placeholder="Access Token">
         <button onclick="handleLogin()" class="btn-login">Login</button>
-        <p>New here? <a href="signup.html">Sign up</a></p>
+        <p>Need an account? <a href="signup.html">Sign up here</a></p>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        const SCRIPT_URL = "const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2s_dMOLrjx6WcZ2aTnrX9yWFJWDz8eqhShtX_dE7oH6wEEDVL2rbVqt-F4Zu7QnMkSA/exec";";
-
         async function handleLogin() {
             const id = document.getElementById('team-id').value;
             const tk = document.getElementById('token-id').value;
@@ -32,9 +31,9 @@
                     sessionStorage.setItem('token', tk);
                     window.location.href = "dashboard.html";
                 } else {
-                    alert("Invalid Credentials!");
+                    alert("Invalid team number or token.");
                 }
-            } catch(e) { alert("Server Error!"); }
+            } catch(e) { alert("Server connection failed."); }
         }
     </script>
 </body>
