@@ -3,91 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Sign Up</title>
+    <title>Create Account - DECODE</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            background-color: #0d1117;
-            color: white;
-            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .auth-card {
-            background: #161b22;
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            width: 100%;
-            max-width: 350px;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-        .auth-card h1 { font-size: 24px; margin-bottom: 8px; color: #f1e05a; }
-        .auth-card p { color: #8b949e; font-size: 14px; margin-bottom: 25px; }
-        
-        .input-group { text-align: left; margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 5px; text-transform: uppercase; }
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            color: white;
-            box-sizing: border-box;
-        }
-        .input-group input:focus { border-color: #58a6ff; outline: none; }
-
-        .btn-auth {
-            width: 100%;
-            padding: 12px;
-            background: #238636;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.2s;
-        }
-        .btn-auth:hover { background: #2ea043; }
-        .btn-auth:disabled { background: #163d22; color: #8b949e; cursor: not-allowed; }
-
-        .footer-link { margin-top: 20px; font-size: 13px; color: #8b949e; }
+        body { background-color: #0d1117; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .auth-card { background: #161b22; padding: 40px; border-radius: 12px; width: 100%; max-width: 360px; text-align: center; }
+        .auth-card h1 { color: #f1e05a; margin-bottom: 5px; font-size: 24px; }
+        .auth-card p { color: #8b949e; margin-bottom: 25px; font-size: 14px; }
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { color: #8b949e; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 8px; }
+        .input-group input { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: white; box-sizing: border-box; }
+        .btn-reg { width: 100%; padding: 14px; background: #4e7d43; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 14px; text-transform: uppercase; }
+        #msg { margin-top: 15px; font-size: 13px; color: #ff7b72; }
+        .footer-link { margin-top: 25px; font-size: 13px; color: #8b949e; }
         .footer-link a { color: #58a6ff; text-decoration: none; }
-        
-        #msg { margin-top: 15px; font-size: 13px; min-height: 18px; }
-        .error { color: #ff7b72; }
-        .success { color: #7ee787; }
     </style>
 </head>
 <body>
-
     <div class="auth-card">
         <h1>Create Account</h1>
         <p>Join the scouting network</p>
-
         <div class="input-group">
             <label>Team Number</label>
-            <input type="number" id="team" placeholder="Ex: 19121">
+            <input type="number" id="team" placeholder="Ex: 35000">
         </div>
-
         <div class="input-group">
             <label>Email Address</label>
-            <input type="email" id="email" placeholder="your@email.com">
+            <input type="email" id="email" placeholder="nume@gmail.com">
         </div>
-
-        <button onclick="handleSignup()" id="btn-signup" class="btn-auth">REGISTER</button>
-        
+        <button onclick="handleSignup()" id="btn-signup" class="btn-reg">Register</button>
         <div id="msg"></div>
-
-        <div class="footer-link">
-            Already have an account? <a href="login.html">Sign In</a>
-        </div>
+        <div class="footer-link">Already have an account? <a href="login.html">Sign In</a></div>
     </div>
 
     <script src="config.js"></script>
@@ -95,34 +41,28 @@
         async function handleSignup() {
             const team = document.getElementById('team').value;
             const email = document.getElementById('email').value;
-            const btn = document.getElementById('btn-signup');
             const msg = document.getElementById('msg');
+            if(!team || !email) { msg.innerText = "Completează toate câmpurile!"; return; }
 
-            if(!team || !email) {
-                msg.innerHTML = '<span class="error">Please fill all fields.</span>';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "CREATING...";
-            msg.innerHTML = "Generating your secure token...";
+            msg.style.color = "#8b949e";
+            msg.innerText = "Se procesează...";
 
             try {
-                const response = await fetch(`${SCRIPT_URL}?action=signup&team=${team}&email=${email}`);
+                // Trimitem cererea către Apps Script cu parametrii corecți
+                const url = `${SCRIPT_URL}?action=signup&team=${team}&email=${email}`;
+                const response = await fetch(url);
                 const data = await response.json();
 
                 if(data.success) {
-                    msg.innerHTML = '<span class="success">Success! Check your email for the Token.</span>';
-                    setTimeout(() => { window.location.href = "login.html"; }, 3000);
+                    msg.style.color = "#7ee787";
+                    msg.innerText = "Succes! Token-ul a fost trimis pe mail.";
+                    setTimeout(() => window.location.href = "login.html", 3000);
                 } else {
-                    msg.innerHTML = `<span class="error">${data.msg}</span>`;
-                    btn.disabled = false;
-                    btn.innerText = "REGISTER";
+                    msg.style.color = "#ff7b72";
+                    msg.innerText = data.msg;
                 }
             } catch (e) {
-                msg.innerHTML = '<span class="error">Connection error. Check SCRIPT_URL.</span>';
-                btn.disabled = false;
-                btn.innerText = "REGISTER";
+                msg.innerText = "Eroare de conexiune (verifică SCRIPT_URL)";
             }
         }
     </script>
