@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v9.0</title>
+    <title>DECODE - Dashboard v9.5</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Database & Intel Styling */
@@ -18,20 +18,22 @@
         .stat-card label { font-size: 9px; color: #8b949e; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .stat-card div { font-size: 20px; font-weight: bold; color: #f1e05a; }
         
-        /* Graph Styling - Fixed Scaling */
+        /* Graph Styling - Anti-Error Scaling */
         .trend-container { 
-            display: flex; align-items: flex-end; gap: 4px; height: 70px; 
-            margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;
-            border: 1px solid #333;
+            display: flex; align-items: flex-end; gap: 4px; height: 75px; 
+            margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;
+            border: 1px solid #333; overflow: hidden;
         }
         .trend-bar { 
             flex: 1; background: #238636; border-radius: 2px 2px 0 0; 
-            min-width: 12px; transition: height 0.5s ease-out; 
+            min-width: 10px; transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
         
         .auto-max-box { background: #0d1117; padding: 8px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; border: 1px solid #222; }
         .auto-max-box b { color: #58a6ff; }
         .hidden { display: none !important; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -48,7 +50,7 @@
                 <div class="scout-header" style="display: flex; gap:10px;">
                     <div class="input-group" style="flex:2">
                         <label>TEAM ID</label>
-                        <input type="number" id="up-target" placeholder="Ex: 19121">
+                        <input type="number" id="up-target" placeholder="Ex: 20000">
                     </div>
                     <div class="input-group" style="flex:1">
                         <label>MATCH #</label>
@@ -99,7 +101,7 @@
                 </div>
 
                 <div class="checkbox-card" style="display:flex; align-items:center; gap:10px; margin: 15px 0;">
-                    <input type="checkbox" id="up-park" style="width:20px; height:20px;">
+                    <input type="checkbox" id="up-park" style="width:22px; height:22px;">
                     <label for="up-park">PARK / ASCENT SUCCESS (P)</label>
                 </div>
 
@@ -110,7 +112,7 @@
         <div id="page-intel" class="page hidden">
             <div class="card-scout">
                 <div class="input-group">
-                    <label>SEARCH TEAM DATA</label>
+                    <label>TARGET ANALYSIS</label>
                     <input type="number" id="intel-search" placeholder="Enter Team ID...">
                 </div>
                 <button onclick="fetchIntel()" class="btn-generate">RUN ANALYTICS</button>
@@ -122,11 +124,10 @@
             <div class="card-scout"><div id="db-content"></div></div>
         </div>
 
-        <div id="success-screen" class="page hidden" style="text-align:center; padding: 50px 20px;">
-            <div style="font-size: 60px; color: #238636;">✓</div>
-            <h2 style="color:white;">Uplink Sent!</h2>
-            <p style="color:#8b949e">Cloud DB Syncing...</p>
-            <p style="margin-top:20px; font-size:14px; color:var(--yellow);">Form reseting in 3s...</p>
+        <div id="success-screen" class="page hidden" style="text-align:center; padding-top: 80px;">
+            <div style="font-size: 80px; color: #238636; margin-bottom: 20px;">✓</div>
+            <h2 style="color:white; margin-bottom: 10px;">Uplink Successful!</h2>
+            <p style="color:#8b949e">Form resetting in 3 seconds...</p>
         </div>
     </div>
 
@@ -141,13 +142,13 @@
 
         function showPage(p) { 
             document.querySelectorAll('.page').forEach(d => d.classList.add('hidden')); 
-            const id = p === 'success-screen' ? p : 'page-'+p;
+            const id = (p === 'success-screen' || p.startsWith('page-')) ? p : 'page-'+p;
             document.getElementById(id).classList.remove('hidden'); 
         }
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Introdu un Team ID!");
+            if(!target) return alert("Missing Team ID!");
             
             const btn = document.getElementById('btn-submit');
             const pos = document.getElementById('auto-pos-select').value;
@@ -155,11 +156,10 @@
             const rp = document.getElementById('up-rp').value;
             const match = document.getElementById('up-match').value;
             
-            // Format auto: scored(total)(P)
             const autoVal = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
 
             btn.disabled = true; 
-            btn.innerText = "UPLINKING...";
+            btn.innerText = "SENDING...";
 
             const p = new URLSearchParams({
                 action: 'uplink', 
@@ -173,10 +173,9 @@
                 rp: rp
             });
 
-            // No-cors fetch asincron
+            // No-cors fetch asincron către Google Script
             fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
 
-            // Trimitere vizuală
             setTimeout(() => {
                 showPage('success-screen');
                 resetScout();
@@ -185,7 +184,7 @@
                     btn.disabled = false; 
                     btn.innerText = "GENERATE REPORT";
                 }, 3000);
-            }, 600);
+            }, 500);
         }
 
         function resetScout() {
@@ -194,7 +193,6 @@
             document.getElementById('up-target').value = "";
             document.getElementById('up-rp').value = "0";
             document.getElementById('up-park').checked = false;
-            // Increment Match
             const m = document.getElementById('up-match');
             m.value = parseInt(m.value || 0) + 1;
         }
@@ -210,7 +208,7 @@
                 myToken: sessionStorage.getItem('token'), 
                 target: t 
             });
-            res.innerHTML = "<p style='margin-top:20px; color:#8b949e;'>Calculating Intelligence...</p>";
+            res.innerHTML = "<p style='margin-top:20px; color:#8b949e;'>Processing Database...</p>";
 
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
@@ -218,11 +216,12 @@
                 
                 if(j.success) {
                     const d = j.data;
-                    // Fix Grafic: Găsim cea mai mare valoare pentru scalare corectă
-                    const maxInHistory = Math.max(15, ...d.teleHistory);
+                    const history = Array.isArray(d.teleHistory) ? d.teleHistory : [];
+                    // Scalare inteligentă: minim 15 pentru a nu avea bare uriașe la scoruri mici
+                    const maxInHistory = history.length > 0 ? Math.max(15, ...history) : 15;
 
                     res.innerHTML = `
-                        <div style="margin-top:25px; text-align:left; animation: fadeIn 0.3s;">
+                        <div style="margin-top:25px; text-align:left; animation: fadeIn 0.4s ease-out;">
                             <h2 style="color:var(--yellow); border-bottom:1px solid #333; padding-bottom:5px;">TEAM ${d.target}</h2>
                             
                             <div class="stat-grid">
@@ -234,19 +233,23 @@
                             <div class="auto-max-box">Red AP / DEP: <b>${d.maxAuto.rap} / ${d.maxAuto.rdep}</b></div>
                             <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
 
-                            <label style="font-size:10px; color:#8b949e; margin-top:20px; display:block;">TELEOP PIECES HISTORY (Trend)</label>
+                            <label style="font-size:10px; color:#8b949e; margin-top:20px; display:block;">TELEOP SCORE TREND</label>
                             <div class="trend-container">
-                                ${d.teleHistory.map(v => {
+                                ${history.length > 0 ? history.map(v => {
                                     const h = (v / maxInHistory) * 100;
-                                    return `<div class="trend-bar" style="height:${h}%;" title="Pieces: ${v}"></div>`;
-                                }).join('')}
+                                    return `<div class="trend-bar" style="height:${Math.max(5, h)}%;" title="Pieces: ${v}"></div>`;
+                                }).join('') : '<p style="color:#555; width:100%; text-align:center; font-size:11px;">No Teleop Data</p>'}
                             </div>
-                            <div style="font-size:9px; color:#555; text-align:center; margin-top:4px;">Newest → ${d.teleHistory.join(' | ')}</div>
+                            <div style="font-size:9px; color:#555; text-align:center; margin-top:6px;">
+                                History Order: ${history.join(' → ') || 'None'}
+                            </div>
                         </div>`;
                 } else {
-                    res.innerHTML = `<p style="color:#ff4d4d; margin-top:10px;">${j.msg}</p>`;
+                    res.innerHTML = `<p style="color:#ff4d4d; margin-top:15px;">${j.msg}</p>`;
                 }
-            } catch(e) { res.innerHTML = "Error loading data."; }
+            } catch(e) { 
+                res.innerHTML = "<p style='color:red;'>Connection Error. Check SCRIPT_URL.</p>"; 
+            }
         }
 
         async function fetchDatabase() {
@@ -256,7 +259,7 @@
                 myTeam: sessionStorage.getItem('team'), 
                 myToken: sessionStorage.getItem('token') 
             });
-            content.innerHTML = "Connecting to Cloud...";
+            content.innerHTML = "Fetching Table...";
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
                 const j = await r.json();
@@ -267,7 +270,6 @@
                     for(let i=1; i<j.table.length; i++){
                         h += '<tr>';
                         j.table[i].forEach((c, idx) => {
-                            // Formatare Timestamp (Coloana 9)
                             if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             h += `<td>${c}</td>`;
                         });
@@ -275,7 +277,7 @@
                     }
                     content.innerHTML = h + '</table>';
                 }
-            } catch(e) { content.innerHTML = "Connection timeout."; }
+            } catch(e) { content.innerHTML = "Fetch failed."; }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
