@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v6</title>
+    <title>DECODE - Dashboard v6.1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app" style="width: 100%; max-width: 480px;">
         <nav class="navbar">
             <button onclick="showPage('scout')">UPLINK</button>
-            <button onclick="showPage('intel');">INTEL</button>
+            <button onclick="showPage('intel')">INTEL</button>
             <button onclick="showPage('records'); fetchDatabase();">DATABASE</button>
             <button onclick="logout()" style="color: #ff4d4d;">EXIT</button>
         </nav>
@@ -39,7 +39,7 @@
                 </div>
 
                 <div class="counter-card yellow-border">
-                    <label class="label-yellow">AUTO IN</label>
+                    <label class="label-yellow">AUTO IN (SCORED)</label>
                     <div class="action-row">
                         <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
                         <span class="count-val" id="val-aS">0</span>
@@ -67,7 +67,7 @@
 
                 <div class="checkbox-card">
                     <input type="checkbox" id="up-park">
-                    <label>PARK / ASCENT (P)</label>
+                    <label>PARK / ASCENT SUCCESS (P)</label>
                 </div>
 
                 <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
@@ -96,6 +96,7 @@
         <div id="success-screen" class="page card hidden">
             <span class="checkmark">✓</span>
             <h2>Uplink Successful!</h2>
+            <p style="color:#888; margin-bottom:20px;">Data added to team history.</p>
             <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
         </div>
     </div>
@@ -104,7 +105,10 @@
     <script>
         let stats = { aS: 0, aM: 0, tS: 0 };
 
-        function updateVal(k, s) { stats[k] = Math.max(0, stats[k]+s); document.getElementById('val-'+k).innerText = stats[k]; }
+        function updateVal(k, s) { 
+            stats[k] = Math.max(0, stats[k] + s); 
+            document.getElementById('val-' + k).innerText = stats[k]; 
+        }
 
         function showPage(p) {
             document.querySelectorAll('.page').forEach(d => d.classList.add('hidden'));
@@ -114,44 +118,89 @@
         async function sendData() {
             const target = document.getElementById('up-target').value;
             if(!target) return alert("Team ID missing!");
+            
             const btn = document.getElementById('btn-submit');
             const pos = document.getElementById('auto-pos-select').value;
             const park = document.getElementById('up-park').checked;
-            const val = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
+            
+            // Format: Scored(Total)(P)
+            const autoVal = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
 
-            btn.disabled = true; btn.innerText = "UPLINKING...";
+            btn.disabled = true;
+            btn.innerText = "UPLINKING...";
 
-            const p = new URLSearchParams({
-                action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
-                target: target, match: document.getElementById('up-match').value,
-                auto_type: pos, auto_val: val, tele: stats.tS, park: park ? "YES" : "NO"
+            const params = new URLSearchParams({
+                action: 'uplink',
+                myTeam: sessionStorage.getItem('team'),
+                myToken: sessionStorage.getItem('token'),
+                target: target,
+                match: document.getElementById('up-match').value,
+                auto_type: pos,
+                auto_val: autoVal,
+                tele: stats.tS,
+                park: park ? "YES" : "NO"
             });
 
             try {
-                await fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
-                showPage('success');
-            } catch(e) { alert("Error!"); }
-            finally { btn.disabled = false; btn.innerText = "GENERATE REPORT"; }
+                // 'no-cors' trimite datele dar returnează un răspuns "opac" (care pare eroare în JS)
+                await fetch(`${SCRIPT_URL}?${params.toString()}`, { 
+                    method: 'GET',
+                    mode: 'no-cors' 
+                });
+                
+                // Forțăm succesul pentru că Google primește datele chiar dacă dă eroare de tip CORS
+                document.getElementById('page-scout').classList.add('hidden');
+                document.getElementById('success-screen').classList.remove('hidden');
+            } catch(e) {
+                // Dacă chiar e eroare de rețea (ex: URL greșit)
+                console.error("Uplink error:", e);
+                alert("Verifică SCRIPT_URL sau conexiunea!");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "GENERATE REPORT";
+            }
         }
 
         async function fetchIntel() {
             const t = document.getElementById('intel-search').value;
             const resDiv = document.getElementById('intel-results');
-            const p = new URLSearchParams({ action: 'intel', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target: t });
+            if(!t) return;
+
+            const p = new URLSearchParams({ 
+                action: 'intel', 
+                myTeam: sessionStorage.getItem('team'), 
+                myToken: sessionStorage.getItem('token'), 
+                target: t 
+            });
             
-            resDiv.innerHTML = "Loading...";
+            resDiv.innerHTML = "Searching...";
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
                 const j = await r.json();
                 if(j.success) {
-                    resDiv.innerHTML = `<div class="intel-card"><h3>Team ${j.data.target}</h3><p>Matches: ${j.data.matches}</p><p>Teleop: ${j.data.tele}</p><p>Auto R_AP: ${j.data.rap || '-'}</p></div>`;
-                } else resDiv.innerHTML = `<p>${j.msg}</p>`;
-            } catch(e) { resDiv.innerHTML = "Error!"; }
+                    resDiv.innerHTML = `
+                        <div class="intel-card" style="margin-top:15px; border:1px solid var(--yellow); padding:15px; border-radius:8px;">
+                            <h3 style="color:var(--yellow)">TEAM ${j.data.target}</h3>
+                            <p><b>Matches:</b> ${j.data.matches}</p>
+                            <p><b>Teleop:</b> ${j.data.tele}</p>
+                            <hr style="margin:10px 0; border:0.5px solid #333;">
+                            <p><b>R_AP Auto:</b> ${j.data.rap || '-'}</p>
+                            <p><b>R_DEP Auto:</b> ${j.data.rdep || '-'}</p>
+                            <p><b>A_AP Auto:</b> ${j.data.aap || '-'}</p>
+                            <p><b>A_DEP Auto:</b> ${j.data.adep || '-'}</p>
+                        </div>`;
+                } else resDiv.innerHTML = `<p style="color:red; margin-top:15px;">${j.msg}</p>`;
+            } catch(e) { resDiv.innerHTML = "Error fetching data."; }
         }
 
         async function fetchDatabase() {
             const content = document.getElementById('db-content');
-            const p = new URLSearchParams({ action: 'mydata', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token') });
+            const p = new URLSearchParams({ 
+                action: 'mydata', 
+                myTeam: sessionStorage.getItem('team'), 
+                myToken: sessionStorage.getItem('token') 
+            });
+            content.innerHTML = "Loading table...";
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
                 const j = await r.json();
@@ -166,11 +215,17 @@
                     }
                     content.innerHTML = h + '</table>';
                 }
-            } catch(e) { content.innerHTML = "Error!"; }
+            } catch(e) { content.innerHTML = "Error loading database."; }
         }
 
-        function resetScout() { stats={aS:0, aM:0, tS:0}; ['aS','aM','tS'].forEach(k=>document.getElementById('val-'+k).innerText="0"); showPage('scout'); }
-        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
+        function resetScout() {
+            stats = { aS: 0, aM: 0, tS: 0 };
+            ['aS', 'aM', 'tS'].forEach(k => document.getElementById('val-' + k).innerText = "0");
+            document.getElementById('up-target').value = "";
+            showPage('scout');
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
     </script>
 </body>
 </html>
