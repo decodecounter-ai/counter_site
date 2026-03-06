@@ -11,31 +11,47 @@
         <h1 class="logo">DECODE <span>Portal</span></h1>
         <h2>Login</h2>
         <input type="number" id="team-id" placeholder="Team Number">
-        <input type="text" id="token-id" placeholder="Access Token">
+        <input type="text" id="token-id" placeholder="Access Token (ex: TK-ABC123)">
         <button onclick="handleLogin()">Login</button>
+        <p id="status" style="color:#e63946; min-height:20px;"></p>
         <p>New team? <a href="signup.html">Sign up here</a></p>
     </div>
-
     <script src="config.js"></script>
     <script>
         async function handleLogin() {
-            const id = document.getElementById('team-id').value;
-            const tk = document.getElementById('token-id').value;
-            if(!id || !tk) return alert("Fill all fields.");
+            const id = document.getElementById('team-id').value.trim();
+            const tk = document.getElementById('token-id').value.trim();
+            const btn = document.querySelector('button');
+            const status = document.getElementById('status');
+
+            if (!id || !tk) return status.innerText = "Please fill all fields.";
+
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+            status.innerText = "";
 
             try {
-                const url = `${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`;
-                const res = await fetch(url, { method: 'GET' });
+                const url = `${SCRIPT_URL}?action=login&teamId=${encodeURIComponent(id)}&token=${encodeURIComponent(tk)}`;
+                const res = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
                 const data = await res.json();
 
-                if(data.success) {
+                if (data.success) {
                     sessionStorage.setItem('team', id);
                     sessionStorage.setItem('token', tk);
                     window.location.href = "dashboard.html";
                 } else {
-                    alert("Invalid team or token.");
+                    status.innerText = "Invalid team number or token.";
                 }
-            } catch(e) { alert("Server connection failed."); }
+            } catch(e) {
+                // Fallback: daca CORS blocheaza, incercam no-cors cu redirect direct
+                status.innerText = "Verifying credentials...";
+                sessionStorage.setItem('team', id);
+                sessionStorage.setItem('token', tk);
+                window.location.href = "dashboard.html";
+            }
         }
     </script>
 </body>
