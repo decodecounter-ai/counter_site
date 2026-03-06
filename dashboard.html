@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v10.0</title>
+    <title>DECODE - Dashboard v10.5</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Database & Intel Styling */
@@ -22,9 +22,10 @@
         .chart-container { 
             background: rgba(0,0,0,0.3); 
             border-radius: 8px; 
-            padding: 15px 5px; 
+            padding: 20px 10px; 
             margin-top: 10px;
             border: 1px solid #333;
+            overflow: visible;
         }
         .chart-svg { overflow: visible; width: 100%; height: 100px; }
         .chart-line { fill: none; stroke: #238636; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -34,7 +35,8 @@
         .auto-max-box b { color: #58a6ff; }
         .hidden { display: none !important; }
         
-        @keyframes drawLine { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
+        @keyframes drawLine { from { stroke-dashoffset: 600; } to { stroke-dashoffset: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -70,7 +72,7 @@
                 </div>
 
                 <div class="counter-card yellow-border">
-                    <label class="label-yellow">AUTO PIECES</label>
+                    <label class="label-yellow">AUTO PIECES SCORRED</label>
                     <div class="action-row">
                         <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
                         <span class="count-val" id="val-aS">0</span>
@@ -78,8 +80,17 @@
                     </div>
                 </div>
 
+                <div class="counter-card red-border">
+                    <label class="label-red">AUTO MISSED</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-red" onclick="updateVal('aM', 1)">+ MISS</button>
+                        <span class="count-val" id="val-aM">0</span>
+                        <button class="btn-undo" onclick="updateVal('aM', -1)">-</button>
+                    </div>
+                </div>
+
                 <div class="counter-card green-border">
-                    <label class="label-green">TELEOP PIECES</label>
+                    <label class="label-green">TELEOP TOTAL PIECES</label>
                     <div class="action-row">
                         <button class="btn-main btn-green" onclick="updateVal('tS', 1)">+ POINT</button>
                         <span class="count-val" id="val-tS">0</span>
@@ -119,7 +130,7 @@
         <div id="success-screen" class="page hidden" style="text-align:center; padding-top: 80px;">
             <div style="font-size: 80px; color: #238636; margin-bottom: 20px;">✓</div>
             <h2 style="color:white;">Uplink Successful!</h2>
-            <p style="color:#8b949e">Resetting in 3s...</p>
+            <p style="color:#8b949e">Form resetting in 3 seconds...</p>
         </div>
     </div>
 
@@ -140,27 +151,38 @@
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Team ID missing!");
+            if(!target) return alert("Missing Team ID!");
             const btn = document.getElementById('btn-submit');
+            const match = document.getElementById('up-match').value;
+            const park = document.getElementById('up-park').checked;
+            
             const p = new URLSearchParams({
                 action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
-                target: target, match: document.getElementById('up-match').value,
+                target: target, match: match,
                 auto_type: document.getElementById('auto-pos-select').value, 
-                auto_val: `${stats.aS}(${stats.aS + (stats.aM || 0)})${document.getElementById('up-park').checked ? "(P)" : ""}`, 
+                auto_val: `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`, 
                 tele: stats.tS, rp: document.getElementById('up-rp').value
             });
+
             btn.disabled = true; btn.innerText = "SENDING...";
             fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
+
             setTimeout(() => {
                 showPage('success-screen');
                 resetScout();
-                setTimeout(() => { showPage('scout'); btn.disabled = false; btn.innerText = "GENERATE REPORT"; }, 3000);
+                setTimeout(() => {
+                    showPage('scout');
+                    btn.disabled = false; btn.innerText = "GENERATE REPORT";
+                }, 3000);
             }, 500);
         }
 
         function resetScout() {
             stats = { aS: 0, aM: 0, tS: 0 };
-            ['aS','tS'].forEach(k => document.getElementById('val-'+k).innerText = "0");
+            ['aS','aM','tS'].forEach(k => {
+                const el = document.getElementById('val-'+k);
+                if(el) el.innerText = "0";
+            });
             document.getElementById('up-target').value = "";
             document.getElementById('up-rp').value = "0";
             document.getElementById('up-park').checked = false;
@@ -172,13 +194,14 @@
             const t = document.getElementById('intel-search').value;
             const res = document.getElementById('intel-results');
             if(!t) return;
-            res.innerHTML = "<p>Crunching numbers...</p>";
+            res.innerHTML = "<p style='margin-top:20px; color:#8b949e;'>Fetching Analytics...</p>";
+
             try {
                 const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams({ action:'intel', myTeam:sessionStorage.getItem('team'), myToken:sessionStorage.getItem('token'), target:t })}`);
                 const j = await r.json();
                 if(j.success) {
                     const d = j.data;
-                    const history = d.teleHistory || [];
+                    const history = Array.isArray(d.teleHistory) ? d.teleHistory : [];
                     
                     // --- LOGICA GENERARE GRAFIC LINIE (SVG) ---
                     let svgContent = "";
@@ -196,28 +219,29 @@
                         svgContent = `
                             <div class="chart-container">
                                 <svg viewBox="-5 -5 110 110" class="chart-svg">
-                                    <path d="${pathD}" class="chart-line" style="stroke-dasharray: 500; stroke-dashoffset: 500; animation: drawLine 1.5s forwards;" />
-                                    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="chart-point"><title>Value: ${p.val}</title></circle>`).join('')}
+                                    <path d="${pathD}" class="chart-line" style="stroke-dasharray: 600; stroke-dashoffset: 600; animation: drawLine 1.5s forwards;" />
+                                    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="chart-point"><title>Pieces: ${p.val}</title></circle>`).join('')}
                                 </svg>
                             </div>`;
                     }
 
                     res.innerHTML = `
-                        <div style="margin-top:20px; text-align:left;">
+                        <div style="margin-top:25px; text-align:left; animation: fadeIn 0.4s ease-out;">
                             <h2 style="color:var(--yellow); border-bottom:1px solid #333;">TEAM ${d.target}</h2>
                             <div class="stat-grid">
                                 <div class="stat-card"><label>Avg Teleop</label><div>${d.avgTele}</div></div>
                                 <div class="stat-card"><label>Last 3 Avg</label><div>${d.avgLast3}</div></div>
                             </div>
-                            <label style="font-size:10px; color:#8b949e;">AUTO MAX</label>
-                            <div class="auto-max-box">Red AP/DEP: <b>${d.maxAuto.rap}/${d.maxAuto.rdep}</b></div>
-                            <div class="auto-max-box">Blue AP/DEP: <b>${d.maxAuto.aap}/${d.maxAuto.adep}</b></div>
-                            <label style="font-size:10px; color:#8b949e; margin-top:15px; display:block;">TELEOP TREND (LINE)</label>
-                            ${svgContent || '<p>No history</p>'}
-                            <div style="font-size:9px; color:#555; text-align:center; margin-top:5px;">Trend: ${history.join(' → ')}</div>
+                            <label style="font-size:10px; color:#8b949e;">AUTO PERFORMANCE (MAX)</label>
+                            <div class="auto-max-box">Red AP / DEP: <b>${d.maxAuto.rap} / ${d.maxAuto.rdep}</b></div>
+                            <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
+                            
+                            <label style="font-size:10px; color:#8b949e; margin-top:20px; display:block;">TELEOP SCORE TREND (LINE)</label>
+                            ${svgContent || '<p style="color:#555; font-size:11px; text-align:center;">No data available</p>'}
+                            <div style="font-size:9px; color:#555; text-align:center; margin-top:6px;">History Order: ${history.join(' → ') || 'None'}</div>
                         </div>`;
-                } else res.innerHTML = `<p style="color:red;">${j.msg}</p>`;
-            } catch(e) { res.innerHTML = "Error!"; }
+                } else res.innerHTML = `<p style="color:#ff4d4d; margin-top:15px;">${j.msg}</p>`;
+            } catch(e) { res.innerHTML = "Error loading data."; }
         }
 
         async function fetchDatabase() {
