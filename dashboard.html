@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v9.5</title>
+    <title>DECODE - Dashboard v10.0</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Database & Intel Styling */
@@ -18,22 +18,23 @@
         .stat-card label { font-size: 9px; color: #8b949e; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .stat-card div { font-size: 20px; font-weight: bold; color: #f1e05a; }
         
-        /* Graph Styling - Anti-Error Scaling */
-        .trend-container { 
-            display: flex; align-items: flex-end; gap: 4px; height: 75px; 
-            margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;
-            border: 1px solid #333; overflow: hidden;
+        /* Line Chart SVG Styling */
+        .chart-container { 
+            background: rgba(0,0,0,0.3); 
+            border-radius: 8px; 
+            padding: 15px 5px; 
+            margin-top: 10px;
+            border: 1px solid #333;
         }
-        .trend-bar { 
-            flex: 1; background: #238636; border-radius: 2px 2px 0 0; 
-            min-width: 10px; transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
+        .chart-svg { overflow: visible; width: 100%; height: 100px; }
+        .chart-line { fill: none; stroke: #238636; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+        .chart-point { fill: #f1e05a; stroke: #1c2128; stroke-width: 2; }
         
         .auto-max-box { background: #0d1117; padding: 8px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; border: 1px solid #222; }
         .auto-max-box b { color: #58a6ff; }
         .hidden { display: none !important; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes drawLine { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
     </style>
 </head>
 <body>
@@ -69,7 +70,7 @@
                 </div>
 
                 <div class="counter-card yellow-border">
-                    <label class="label-yellow">AUTO PIECES SCORRED</label>
+                    <label class="label-yellow">AUTO PIECES</label>
                     <div class="action-row">
                         <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
                         <span class="count-val" id="val-aS">0</span>
@@ -77,17 +78,8 @@
                     </div>
                 </div>
 
-                <div class="counter-card red-border">
-                    <label class="label-red">AUTO MISSED</label>
-                    <div class="action-row">
-                        <button class="btn-main btn-red" onclick="updateVal('aM', 1)">+ MISS</button>
-                        <span class="count-val" id="val-aM">0</span>
-                        <button class="btn-undo" onclick="updateVal('aM', -1)">-</button>
-                    </div>
-                </div>
-
                 <div class="counter-card green-border">
-                    <label class="label-green">TELEOP TOTAL PIECES</label>
+                    <label class="label-green">TELEOP PIECES</label>
                     <div class="action-row">
                         <button class="btn-main btn-green" onclick="updateVal('tS', 1)">+ POINT</button>
                         <span class="count-val" id="val-tS">0</span>
@@ -126,8 +118,8 @@
 
         <div id="success-screen" class="page hidden" style="text-align:center; padding-top: 80px;">
             <div style="font-size: 80px; color: #238636; margin-bottom: 20px;">✓</div>
-            <h2 style="color:white; margin-bottom: 10px;">Uplink Successful!</h2>
-            <p style="color:#8b949e">Form resetting in 3 seconds...</p>
+            <h2 style="color:white;">Uplink Successful!</h2>
+            <p style="color:#8b949e">Resetting in 3s...</p>
         </div>
     </div>
 
@@ -148,48 +140,27 @@
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Missing Team ID!");
-            
+            if(!target) return alert("Team ID missing!");
             const btn = document.getElementById('btn-submit');
-            const pos = document.getElementById('auto-pos-select').value;
-            const park = document.getElementById('up-park').checked;
-            const rp = document.getElementById('up-rp').value;
-            const match = document.getElementById('up-match').value;
-            
-            const autoVal = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
-
-            btn.disabled = true; 
-            btn.innerText = "SENDING...";
-
             const p = new URLSearchParams({
-                action: 'uplink', 
-                myTeam: sessionStorage.getItem('team'), 
-                myToken: sessionStorage.getItem('token'),
-                target: target, 
-                match: match,
-                auto_type: pos, 
-                auto_val: autoVal, 
-                tele: stats.tS, 
-                rp: rp
+                action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
+                target: target, match: document.getElementById('up-match').value,
+                auto_type: document.getElementById('auto-pos-select').value, 
+                auto_val: `${stats.aS}(${stats.aS + (stats.aM || 0)})${document.getElementById('up-park').checked ? "(P)" : ""}`, 
+                tele: stats.tS, rp: document.getElementById('up-rp').value
             });
-
-            // No-cors fetch asincron către Google Script
+            btn.disabled = true; btn.innerText = "SENDING...";
             fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
-
             setTimeout(() => {
                 showPage('success-screen');
                 resetScout();
-                setTimeout(() => {
-                    showPage('scout');
-                    btn.disabled = false; 
-                    btn.innerText = "GENERATE REPORT";
-                }, 3000);
+                setTimeout(() => { showPage('scout'); btn.disabled = false; btn.innerText = "GENERATE REPORT"; }, 3000);
             }, 500);
         }
 
         function resetScout() {
             stats = { aS: 0, aM: 0, tS: 0 };
-            ['aS','aM','tS'].forEach(k => document.getElementById('val-'+k).innerText = "0");
+            ['aS','tS'].forEach(k => document.getElementById('val-'+k).innerText = "0");
             document.getElementById('up-target').value = "";
             document.getElementById('up-rp').value = "0";
             document.getElementById('up-park').checked = false;
@@ -201,67 +172,58 @@
             const t = document.getElementById('intel-search').value;
             const res = document.getElementById('intel-results');
             if(!t) return;
-            
-            const p = new URLSearchParams({ 
-                action: 'intel', 
-                myTeam: sessionStorage.getItem('team'), 
-                myToken: sessionStorage.getItem('token'), 
-                target: t 
-            });
-            res.innerHTML = "<p style='margin-top:20px; color:#8b949e;'>Processing Database...</p>";
-
+            res.innerHTML = "<p>Crunching numbers...</p>";
             try {
-                const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams({ action:'intel', myTeam:sessionStorage.getItem('team'), myToken:sessionStorage.getItem('token'), target:t })}`);
                 const j = await r.json();
-                
                 if(j.success) {
                     const d = j.data;
-                    const history = Array.isArray(d.teleHistory) ? d.teleHistory : [];
-                    // Scalare inteligentă: minim 15 pentru a nu avea bare uriașe la scoruri mici
-                    const maxInHistory = history.length > 0 ? Math.max(15, ...history) : 15;
+                    const history = d.teleHistory || [];
+                    
+                    // --- LOGICA GENERARE GRAFIC LINIE (SVG) ---
+                    let svgContent = "";
+                    if(history.length > 0) {
+                        const maxVal = Math.max(15, ...history);
+                        const points = history.map((val, i) => {
+                            const x = (i / (history.length > 1 ? history.length - 1 : 1)) * 100;
+                            const y = 100 - ((val / maxVal) * 100);
+                            return { x, y, val };
+                        });
+                        
+                        let pathD = `M ${points[0].x} ${points[0].y}`;
+                        points.forEach((p, i) => { if(i > 0) pathD += ` L ${p.x} ${p.y}`; });
+                        
+                        svgContent = `
+                            <div class="chart-container">
+                                <svg viewBox="-5 -5 110 110" class="chart-svg">
+                                    <path d="${pathD}" class="chart-line" style="stroke-dasharray: 500; stroke-dashoffset: 500; animation: drawLine 1.5s forwards;" />
+                                    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="chart-point"><title>Value: ${p.val}</title></circle>`).join('')}
+                                </svg>
+                            </div>`;
+                    }
 
                     res.innerHTML = `
-                        <div style="margin-top:25px; text-align:left; animation: fadeIn 0.4s ease-out;">
-                            <h2 style="color:var(--yellow); border-bottom:1px solid #333; padding-bottom:5px;">TEAM ${d.target}</h2>
-                            
+                        <div style="margin-top:20px; text-align:left;">
+                            <h2 style="color:var(--yellow); border-bottom:1px solid #333;">TEAM ${d.target}</h2>
                             <div class="stat-grid">
                                 <div class="stat-card"><label>Avg Teleop</label><div>${d.avgTele}</div></div>
                                 <div class="stat-card"><label>Last 3 Avg</label><div>${d.avgLast3}</div></div>
                             </div>
-
-                            <label style="font-size:10px; color:#8b949e;">AUTO PERFORMANCE (MAX)</label>
-                            <div class="auto-max-box">Red AP / DEP: <b>${d.maxAuto.rap} / ${d.maxAuto.rdep}</b></div>
-                            <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
-
-                            <label style="font-size:10px; color:#8b949e; margin-top:20px; display:block;">TELEOP SCORE TREND</label>
-                            <div class="trend-container">
-                                ${history.length > 0 ? history.map(v => {
-                                    const h = (v / maxInHistory) * 100;
-                                    return `<div class="trend-bar" style="height:${Math.max(5, h)}%;" title="Pieces: ${v}"></div>`;
-                                }).join('') : '<p style="color:#555; width:100%; text-align:center; font-size:11px;">No Teleop Data</p>'}
-                            </div>
-                            <div style="font-size:9px; color:#555; text-align:center; margin-top:6px;">
-                                History Order: ${history.join(' → ') || 'None'}
-                            </div>
+                            <label style="font-size:10px; color:#8b949e;">AUTO MAX</label>
+                            <div class="auto-max-box">Red AP/DEP: <b>${d.maxAuto.rap}/${d.maxAuto.rdep}</b></div>
+                            <div class="auto-max-box">Blue AP/DEP: <b>${d.maxAuto.aap}/${d.maxAuto.adep}</b></div>
+                            <label style="font-size:10px; color:#8b949e; margin-top:15px; display:block;">TELEOP TREND (LINE)</label>
+                            ${svgContent || '<p>No history</p>'}
+                            <div style="font-size:9px; color:#555; text-align:center; margin-top:5px;">Trend: ${history.join(' → ')}</div>
                         </div>`;
-                } else {
-                    res.innerHTML = `<p style="color:#ff4d4d; margin-top:15px;">${j.msg}</p>`;
-                }
-            } catch(e) { 
-                res.innerHTML = "<p style='color:red;'>Connection Error. Check SCRIPT_URL.</p>"; 
-            }
+                } else res.innerHTML = `<p style="color:red;">${j.msg}</p>`;
+            } catch(e) { res.innerHTML = "Error!"; }
         }
 
         async function fetchDatabase() {
             const content = document.getElementById('db-content');
-            const p = new URLSearchParams({ 
-                action: 'mydata', 
-                myTeam: sessionStorage.getItem('team'), 
-                myToken: sessionStorage.getItem('token') 
-            });
-            content.innerHTML = "Fetching Table...";
             try {
-                const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
+                const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams({ action:'mydata', myTeam:sessionStorage.getItem('team'), myToken:sessionStorage.getItem('token') })}`);
                 const j = await r.json();
                 if(j.success) {
                     let h = '<table class="db-table"><tr>';
@@ -270,14 +232,14 @@
                     for(let i=1; i<j.table.length; i++){
                         h += '<tr>';
                         j.table[i].forEach((c, idx) => {
-                            if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                             h += `<td>${c}</td>`;
                         });
                         h += '</tr>';
                     }
                     content.innerHTML = h + '</table>';
                 }
-            } catch(e) { content.innerHTML = "Fetch failed."; }
+            } catch(e) { content.innerHTML = "Error!"; }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
