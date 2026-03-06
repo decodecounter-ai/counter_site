@@ -1,96 +1,112 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="app" style="max-width: 800px; width: 95%;">
-        <nav class="navbar">
-            <button onclick="showPage('scout')">Uplink</button>
-            <button onclick="showPage('intel')">Unified Intel</button>
-            <button onclick="showPage('records')">My Records</button>
-            <button onclick="logout()" style="background:#e63946">Logout</button>
-        </nav>
+<div id="page-scout" class="page card">
+    <h2>📤 Match Uplink</h2>
+    
+    <div class="grid">
+        <input type="number" id="up-target" placeholder="Target Team #">
+        <select id="up-pos">
+            <option value="Red-1">Red 1</option>
+            <option value="Red-2">Red 2</option>
+            <option value="Blue-1">Blue 1</option>
+            <option value="Blue-2">Blue 2</option>
+        </select>
+    </div>
 
-        <div id="page-scout" class="page card">
-            <h2>📤 Match Scouting</h2>
-            <input type="number" id="up-target" placeholder="Target Team">
-            <div class="grid">
-                <input type="number" id="up-rap" placeholder="R ap">
-                <input type="number" id="up-rdep" placeholder="R dep">
-                <input type="number" id="up-aap" placeholder="A ap">
-                <input type="number" id="up-adep" placeholder="A dep">
-            </div>
-            <input type="number" id="up-scor" placeholder="Total Score">
-            <input type="text" id="up-autos" placeholder="Auto Sequence">
-            <button onclick="sendData()">Submit Data</button>
+    <div class="scouting-section">
+        <div class="counter-row">
+            <span>R ap</span>
+            <button onclick="change('up-rap', -1)">-</button>
+            <input type="number" id="up-rap" value="0" readonly>
+            <button onclick="change('up-rap', 1)">+</button>
         </div>
-
-        <div id="page-intel" class="page card hidden">
-            <h2>🔍 Deep Search</h2>
-            <div class="grid" style="grid-template-columns: 3fr 1fr;">
-                <input type="number" id="search-target" placeholder="Team ID">
-                <button onclick="runIntel()">Scan</button>
-            </div>
-            <div id="intel-output"></div>
+        <div class="counter-row">
+            <span>R dep</span>
+            <button onclick="change('up-rdep', -1)">-</button>
+            <input type="number" id="up-rdep" value="0" readonly>
+            <button onclick="change('up-rdep', 1)">+</button>
         </div>
-
-        <div id="page-records" class="page card hidden">
-            <h2>📋 Database</h2>
-            <div id="table-view" class="scroll-table"></div>
+        <div class="counter-row">
+            <span>A ap</span>
+            <button onclick="change('up-aap', -1)">-</button>
+            <input type="number" id="up-aap" value="0" readonly>
+            <button onclick="change('up-aap', 1)">+</button>
+        </div>
+        <div class="counter-row">
+            <span>A dep</span>
+            <button onclick="change('up-adep', -1)">-</button>
+            <input type="number" id="up-adep" value="0" readonly>
+            <button onclick="change('up-adep', 1)">+</button>
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script>
-        const team = sessionStorage.getItem('team');
-        const token = sessionStorage.getItem('token');
-        if(!team || !token) window.location.href = "login.html";
+    <input type="number" id="up-scor" placeholder="Final Score">
+    <div style="margin: 15px 0; display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" id="up-park" style="width:20px; height:20px;">
+        <label>Robot Parked?</label>
+    </div>
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            document.getElementById('page-' + id).classList.remove('hidden');
-            if(id === 'records') loadRecords();
+    <button onclick="sendData()" class="btn-login" id="btn-submit">Submit Data</button>
+</div>
+
+<div id="success-screen" class="page card hidden" style="text-align:center;">
+    <div style="font-size: 80px; color: var(--primary);">✓</div>
+    <h3>Data Sent to Database!</h3>
+    <button onclick="showPage('scout')" class="btn-login">Back to Scout</button>
+</div>
+
+<script>
+// Funcția pentru butoanele de +/-
+function change(id, val) {
+    let el = document.getElementById(id);
+    let current = parseInt(el.value) || 0;
+    if(current + val >= 0) el.value = current + val;
+}
+
+async function sendData() {
+    const btn = document.getElementById('btn-submit');
+    const target = document.getElementById('up-target').value;
+    if(!target) return alert("Enter Target Team!");
+
+    btn.innerText = "Uplinking...";
+    btn.disabled = true;
+
+    // Generăm secvența de AUTOS (concatenată cu R/A)
+    // Exemplu: "R-ap: 2 | R-dep: 1 | A-ap: 0 | A-dep: 3"
+    const autoString = `R:${val('up-rap')}|R:${val('up-rdep')}|A:${val('up-aap')}|A:${val('up-adep')}`;
+
+    const params = new URLSearchParams({
+        action: 'uplink',
+        myTeam: sessionStorage.getItem('team'),
+        myToken: sessionStorage.getItem('token'),
+        target: target,
+        rap: val('up-rap'),
+        rdep: val('up-rdep'),
+        aap: val('up-aap'),
+        adep: val('up-adep'),
+        scor: val('up-scor'),
+        autos: autoString,
+        position: document.getElementById('up-pos').value,
+        park: document.getElementById('up-park').checked ? "YES" : "NO"
+    });
+
+    try {
+        const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+        const data = await res.json();
+        if(data.success) {
+            // Resetăm câmpurile
+            document.querySelectorAll('#page-scout input[type="number"]').forEach(i => i.value = (i.id == 'up-target' ? '' : '0'));
+            document.getElementById('up-park').checked = false;
+            
+            // Arătăm bifa draguță
+            document.getElementById('page-scout').classList.add('hidden');
+            document.getElementById('success-screen').classList.remove('hidden');
         }
+    } catch(e) {
+        alert("Error sending data!");
+    } finally {
+        btn.innerText = "Submit Data";
+        btn.disabled = false;
+    }
+}
 
-        async function sendData() {
-            const p = new URLSearchParams({
-                action: 'uplink', myTeam: team, myToken: token,
-                target: val('up-target'), rap: val('up-rap'), rdep: val('up-rdep'),
-                aap: val('up-aap'), adep: val('up-adep'), scor: val('up-scor'), autos: val('up-autos')
-            });
-            const res = await fetch(`${SCRIPT_URL}?${p.toString()}`);
-            const data = await res.json();
-            if(data.success) alert("Data Saved!");
-        }
-
-        async function runIntel() {
-            const res = await fetch(`${SCRIPT_URL}?action=intel&myTeam=${team}&myToken=${token}&target=${val('search-target')}`);
-            const d = await res.json();
-            if(d.success) {
-                document.getElementById('intel-output').innerHTML = `
-                    <div class="stat-item">
-                        <p><b>Matches:</b> ${d.stats.count} | <b>Avg Score:</b> ${d.stats.avgScor}</p>
-                        <p><b>RAP:</b> ${d.stats.avgRap} | <b>RDEP:</b> ${d.stats.avgRdep}</p>
-                        <p><b>Autos:</b> <br><small>${d.stats.autoHistory}</small></p>
-                    </div>`;
-            } else alert("No data found.");
-        }
-
-        async function loadRecords() {
-            const res = await fetch(`${SCRIPT_URL}?action=mydata&myTeam=${team}&myToken=${token}`);
-            const d = await res.json();
-            if(d.success) {
-                let h = '<table>' + d.table.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</table>';
-                document.getElementById('table-view').innerHTML = h;
-            }
-        }
-
-        function val(id) { return document.getElementById(id).value; }
-        function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
-    </script>
-</body>
-</html>
+function val(id) { return document.getElementById(id).value; }
+</script>
