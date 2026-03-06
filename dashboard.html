@@ -28,7 +28,7 @@
             </div>
 
             <div class="input-group">
-                <label>AUTO POSITION (Column Selector)</label>
+                <label>AUTO POSITION</label>
                 <select id="auto-pos-select">
                     <option value="rap">RED - Aproape</option>
                     <option value="rdep">RED - Departe</option>
@@ -38,23 +38,29 @@
             </div>
 
             <div class="counter-card yellow-border">
-                <label class="label-yellow">AUTO PIECES</label>
+                <label class="label-yellow">AUTO IN (SCORED)</label>
                 <div class="action-row">
-                    <button class="btn-main btn-yellow" onclick="updateAuto(1, false)">+ PIECE</button>
-                    <button class="btn-main btn-red" onclick="updateAuto(1, true)">+ MISS</button>
-                    <div class="display-box">
-                        <span id="txt-auto">0(0)</span>
-                        <button class="btn-undo-mini" onclick="undoAuto()">Undo</button>
-                    </div>
+                    <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
+                    <span class="count-val" id="val-aS">0</span>
+                    <button class="btn-undo" onclick="updateVal('aS', -1)">-</button>
+                </div>
+            </div>
+
+            <div class="counter-card red-border">
+                <label class="label-red">AUTO MISSED</label>
+                <div class="action-row">
+                    <button class="btn-main btn-red" onclick="updateVal('aM', 1)">+ MISS</button>
+                    <span class="count-val" id="val-aM">0</span>
+                    <button class="btn-undo" onclick="updateVal('aM', -1)">-</button>
                 </div>
             </div>
 
             <div class="counter-card green-border">
-                <label class="label-green">TELEOP PIECES</label>
+                <label class="label-green">TELEOP PUNCT</label>
                 <div class="action-row">
-                    <button class="btn-main btn-green" onclick="updateTele(1)">+ PIECE</button>
-                    <span class="count-val" id="txt-tele">0</span>
-                    <button class="btn-undo-mini" onclick="updateTele(-1)">Undo</button>
+                    <button class="btn-main btn-green" onclick="updateVal('tS', 1)">+ POINT</button>
+                    <span class="count-val" id="val-tS">0</span>
+                    <button class="btn-undo" onclick="updateVal('tS', -1)">-</button>
                 </div>
             </div>
 
@@ -69,33 +75,17 @@
         <div id="success-screen" class="page card hidden">
             <span class="checkmark">✓</span>
             <h2>Report Sent!</h2>
-            <p style="color:#888; margin-bottom: 20px;">Data added to your column.</p>
             <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script>
-        // --- LOGICA VARIABILE ---
-        let autoS = 0, autoM = 0, teleS = 0;
+        let stats = { aS: 0, aM: 0, tS: 0 };
 
-        function updateAuto(val, isMiss) {
-            if(isMiss) autoM += val; else autoS += val;
-            renderAuto();
-        }
-
-        function undoAuto() {
-            if(autoS > 0) autoS--; else if(autoM > 0) autoM--;
-            renderAuto();
-        }
-
-        function renderAuto() {
-            document.getElementById('txt-auto').innerText = `${autoS}(${autoS + autoM})`;
-        }
-
-        function updateTele(val) {
-            teleS = Math.max(0, teleS + val);
-            document.getElementById('txt-tele').innerText = teleS;
+        function updateVal(key, step) {
+            stats[key] = Math.max(0, stats[key] + step);
+            document.getElementById('val-' + key).innerText = stats[key];
         }
 
         function showPage(p) {
@@ -103,64 +93,49 @@
             document.getElementById('page-' + p).classList.remove('hidden');
         }
 
-        function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
-
-        // --- TRIMITERE DATE (Logic Dropdown) ---
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Please enter Team ID");
+            if(!target) return alert("Enter Team ID!");
 
             const btn = document.getElementById('btn-submit');
-            const pos = document.getElementById('auto-pos-select').value; // rap, rdep, aap, sau adep
-            const isParked = document.getElementById('up-park').checked;
-            const pSuffix = isParked ? "(P)" : "";
+            const pos = document.getElementById('auto-pos-select').value;
+            const isParked = document.getElementById('up-park.checked');
+            const pSuffix = document.getElementById('up-park').checked ? "(P)" : "";
+            
+            // Formatul tau x(x+y)(P)
+            const autoFormatted = `${stats.aS}(${stats.aS + stats.aM})${pSuffix}`;
 
             btn.innerText = "UPLINKING...";
             btn.disabled = true;
 
-            // Construim valoarea finala x(x+y)(P)
-            const autoVal = `${autoS}(${autoS + autoM})${pSuffix}`;
-
-            // Parametrii trimisi catre Apps Script
             const params = new URLSearchParams({
                 action: 'uplink',
                 myTeam: sessionStorage.getItem('team'),
                 myToken: sessionStorage.getItem('token'),
                 target: target,
                 match: document.getElementById('up-match').value,
-                tele: teleS,
-                park: isParked ? "YES" : "NO",
-                [pos]: autoVal // Aici se alege coloana din Apps Script (B, C, D sau E)
+                tele: stats.tS,
+                park: document.getElementById('up-park').checked ? "YES" : "NO",
+                [pos]: autoFormatted
             });
 
             try {
-                // 'no-cors' rezolva eroarea rosie din consola
-                await fetch(`${SCRIPT_URL}?${params.toString()}`, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                });
-                
-                // Fortam afisarea succesului
+                await fetch(`${SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' });
                 document.getElementById('page-scout').classList.add('hidden');
                 document.getElementById('success-screen').classList.remove('hidden');
-            } catch(e) {
-                alert("Connection Error! Check console.");
-                console.error(e);
-            } finally {
-                btn.innerText = "GENERATE REPORT";
-                btn.disabled = false;
-            }
+            } catch(e) { alert("Error!"); }
+            finally { btn.innerText = "GENERATE REPORT"; btn.disabled = false; }
         }
 
         function resetScout() {
-            autoS = 0; autoM = 0; teleS = 0;
-            renderAuto();
-            document.getElementById('txt-tele').innerText = "0";
+            stats = { aS: 0, aM: 0, tS: 0 };
+            ['aS', 'aM', 'tS'].forEach(k => document.getElementById('val-' + k).innerText = "0");
             document.getElementById('up-target').value = "";
-            document.getElementById('up-park').checked = false;
             document.getElementById('success-screen').classList.add('hidden');
             document.getElementById('page-scout').classList.remove('hidden');
         }
+
+        function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
     </script>
 </body>
 </html>
