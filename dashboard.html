@@ -3,78 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard</title>
+    <title>DECODE - Dashboard v6</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app" style="width: 100%; max-width: 480px;">
         <nav class="navbar">
             <button onclick="showPage('scout')">UPLINK</button>
-            <button onclick="showPage('intel')">INTEL</button>
-            <button onclick="showPage('records')">DATABASE</button>
+            <button onclick="showPage('intel');">INTEL</button>
+            <button onclick="showPage('records'); fetchDatabase();">DATABASE</button>
             <button onclick="logout()" style="color: #ff4d4d;">EXIT</button>
         </nav>
 
-        <div id="page-scout" class="page card-scout">
-            <div class="scout-header">
+        <div id="page-scout" class="page">
+            <div class="card-scout">
+                <div class="scout-header">
+                    <div class="input-group">
+                        <label>TEAM ID</label>
+                        <input type="number" id="up-target" placeholder="12345">
+                    </div>
+                    <div class="input-group">
+                        <label>MATCH #</label>
+                        <input type="number" id="up-match" value="1">
+                    </div>
+                </div>
+
                 <div class="input-group">
-                    <label>TEAM ID</label>
-                    <input type="number" id="up-target" placeholder="20000">
+                    <label>AUTO POSITION</label>
+                    <select id="auto-pos-select">
+                        <option value="rap">RED - Aproape</option>
+                        <option value="rdep">RED - Departe</option>
+                        <option value="aap">BLUE - Aproape</option>
+                        <option value="adep">BLUE - Departe</option>
+                    </select>
                 </div>
+
+                <div class="counter-card yellow-border">
+                    <label class="label-yellow">AUTO IN</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
+                        <span class="count-val" id="val-aS">0</span>
+                        <button class="btn-undo" onclick="updateVal('aS', -1)">-</button>
+                    </div>
+                </div>
+
+                <div class="counter-card red-border">
+                    <label class="label-red">AUTO MISSED</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-red" onclick="updateVal('aM', 1)">+ MISS</button>
+                        <span class="count-val" id="val-aM">0</span>
+                        <button class="btn-undo" onclick="updateVal('aM', -1)">-</button>
+                    </div>
+                </div>
+
+                <div class="counter-card green-border">
+                    <label class="label-green">TELEOP PUNCT</label>
+                    <div class="action-row">
+                        <button class="btn-main btn-green" onclick="updateVal('tS', 1)">+ POINT</button>
+                        <span class="count-val" id="val-tS">0</span>
+                        <button class="btn-undo" onclick="updateVal('tS', -1)">-</button>
+                    </div>
+                </div>
+
+                <div class="checkbox-card">
+                    <input type="checkbox" id="up-park">
+                    <label>PARK / ASCENT (P)</label>
+                </div>
+
+                <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
+            </div>
+        </div>
+
+        <div id="page-intel" class="page hidden">
+            <div class="card-scout">
                 <div class="input-group">
-                    <label>MATCH #</label>
-                    <input type="number" id="up-match" value="1">
+                    <label>SEARCH TEAM ID</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="intel-search" placeholder="Ex: 20000">
+                        <button onclick="fetchIntel()" class="btn-main btn-green" style="flex:0.5">SEARCH</button>
+                    </div>
                 </div>
+                <div id="intel-results"></div>
             </div>
+        </div>
 
-            <div class="input-group">
-                <label>AUTO POSITION</label>
-                <select id="auto-pos-select">
-                    <option value="rap">RED - Aproape</option>
-                    <option value="rdep">RED - Departe</option>
-                    <option value="aap">BLUE - Aproape</option>
-                    <option value="adep">BLUE - Departe</option>
-                </select>
+        <div id="page-records" class="page hidden">
+            <div class="card-scout" style="overflow-x: auto;">
+                <div id="db-content"></div>
             </div>
-
-            <div class="counter-card yellow-border">
-                <label class="label-yellow">AUTO IN (SCORED)</label>
-                <div class="action-row">
-                    <button class="btn-main btn-yellow" onclick="updateVal('aS', 1)">+ PIECE</button>
-                    <span class="count-val" id="val-aS">0</span>
-                    <button class="btn-undo" onclick="updateVal('aS', -1)">-</button>
-                </div>
-            </div>
-
-            <div class="counter-card red-border">
-                <label class="label-red">AUTO MISSED</label>
-                <div class="action-row">
-                    <button class="btn-main btn-red" onclick="updateVal('aM', 1)">+ MISS</button>
-                    <span class="count-val" id="val-aM">0</span>
-                    <button class="btn-undo" onclick="updateVal('aM', -1)">-</button>
-                </div>
-            </div>
-
-            <div class="counter-card green-border">
-                <label class="label-green">TELEOP PUNCT</label>
-                <div class="action-row">
-                    <button class="btn-main btn-green" onclick="updateVal('tS', 1)">+ POINT</button>
-                    <span class="count-val" id="val-tS">0</span>
-                    <button class="btn-undo" onclick="updateVal('tS', -1)">-</button>
-                </div>
-            </div>
-
-            <div class="checkbox-card">
-                <input type="checkbox" id="up-park">
-                <label>ASCENT / PARK SUCCESS (P)</label>
-            </div>
-
-            <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
         </div>
 
         <div id="success-screen" class="page card hidden">
             <span class="checkmark">✓</span>
-            <h2>Report Sent!</h2>
+            <h2>Uplink Successful!</h2>
             <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
         </div>
     </div>
@@ -83,65 +104,73 @@
     <script>
         let stats = { aS: 0, aM: 0, tS: 0 };
 
-        function updateVal(key, step) {
-            stats[key] = Math.max(0, stats[key] + step);
-            document.getElementById('val-' + key).innerText = stats[key];
-        }
+        function updateVal(k, s) { stats[k] = Math.max(0, stats[k]+s); document.getElementById('val-'+k).innerText = stats[k]; }
 
         function showPage(p) {
-            document.querySelectorAll('.page').forEach(div => div.classList.add('hidden'));
+            document.querySelectorAll('.page').forEach(d => d.classList.add('hidden'));
             document.getElementById('page-' + p).classList.remove('hidden');
         }
 
         async function sendData() {
-    const target = document.getElementById('up-target').value;
-    if(!target) return alert("Enter Team ID!");
+            const target = document.getElementById('up-target').value;
+            if(!target) return alert("Team ID missing!");
+            const btn = document.getElementById('btn-submit');
+            const pos = document.getElementById('auto-pos-select').value;
+            const park = document.getElementById('up-park').checked;
+            const val = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
 
-    const btn = document.getElementById('btn-submit');
-    const posKey = document.getElementById('auto-pos-select').value; // 'rap', 'rdep', etc.
-    const isParked = document.getElementById('up-park').checked;
-    const pSuffix = isParked ? "(P)" : "";
-    
-    // Construim string-ul de Auto
-    const autoFormatted = `${stats.aS}(${stats.aS + stats.aM})${pSuffix}`;
+            btn.disabled = true; btn.innerText = "UPLINKING...";
 
-    btn.innerText = "UPLINKING...";
-    btn.disabled = true;
+            const p = new URLSearchParams({
+                action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
+                target: target, match: document.getElementById('up-match').value,
+                auto_type: pos, auto_val: val, tele: stats.tS, park: park ? "YES" : "NO"
+            });
 
-    // Trimitem datele curat
-    const params = new URLSearchParams({
-        action: 'uplink',
-        myTeam: sessionStorage.getItem('team'),
-        myToken: sessionStorage.getItem('token'),
-        target: target,
-        match: document.getElementById('up-match').value,
-        auto_type: posKey,      // Îi spunem scriptului ce coloană să updateze
-        auto_val: autoFormatted, // Valoarea de pus cu virgulă
-        tele: stats.tS,          // Se duce în coloana G
-        park: isParked ? "YES" : "NO"
-    });
-
-    try {
-        await fetch(`${SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' });
-        document.getElementById('page-scout').classList.add('hidden');
-        document.getElementById('success-screen').classList.remove('hidden');
-    } catch(e) { 
-        alert("Error!"); 
-    } finally { 
-        btn.innerText = "GENERATE REPORT"; 
-        btn.disabled = false; 
-    }
-}
-
-        function resetScout() {
-            stats = { aS: 0, aM: 0, tS: 0 };
-            ['aS', 'aM', 'tS'].forEach(k => document.getElementById('val-' + k).innerText = "0");
-            document.getElementById('up-target').value = "";
-            document.getElementById('success-screen').classList.add('hidden');
-            document.getElementById('page-scout').classList.remove('hidden');
+            try {
+                await fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
+                showPage('success');
+            } catch(e) { alert("Error!"); }
+            finally { btn.disabled = false; btn.innerText = "GENERATE REPORT"; }
         }
 
-        function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
+        async function fetchIntel() {
+            const t = document.getElementById('intel-search').value;
+            const resDiv = document.getElementById('intel-results');
+            const p = new URLSearchParams({ action: 'intel', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target: t });
+            
+            resDiv.innerHTML = "Loading...";
+            try {
+                const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
+                const j = await r.json();
+                if(j.success) {
+                    resDiv.innerHTML = `<div class="intel-card"><h3>Team ${j.data.target}</h3><p>Matches: ${j.data.matches}</p><p>Teleop: ${j.data.tele}</p><p>Auto R_AP: ${j.data.rap || '-'}</p></div>`;
+                } else resDiv.innerHTML = `<p>${j.msg}</p>`;
+            } catch(e) { resDiv.innerHTML = "Error!"; }
+        }
+
+        async function fetchDatabase() {
+            const content = document.getElementById('db-content');
+            const p = new URLSearchParams({ action: 'mydata', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token') });
+            try {
+                const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
+                const j = await r.json();
+                if(j.success) {
+                    let h = '<table class="db-table"><tr>';
+                    j.table[0].forEach(cell => h += `<th>${cell}</th>`);
+                    h += '</tr>';
+                    for(let i=1; i<j.table.length; i++){
+                        h += '<tr>';
+                        j.table[i].forEach(c => h += `<td>${c}</td>`);
+                        h += '</tr>';
+                    }
+                    content.innerHTML = h + '</table>';
+                }
+            } catch(e) { content.innerHTML = "Error!"; }
+        }
+
+        function resetScout() { stats={aS:0, aM:0, tS:0}; ['aS','aM','tS'].forEach(k=>document.getElementById('val-'+k).innerText="0"); showPage('scout'); }
+        function logout() { sessionStorage.clear(); window.location.href="login.html"; }
     </script>
 </body>
 </html>
