@@ -10,38 +10,42 @@
     <div class="card">
         <h1 class="logo">DECODE <span>Portal</span></h1>
         <h2>Create Account</h2>
-        <input type="number" id="team-id" placeholder="Team Number (e.g. 19121)">
+        <input type="number" id="team-id" placeholder="Team Number (e.g. 17962)">
         <input type="email" id="email-id" placeholder="Official Email Address">
-        <button onclick="handleSignup()" class="btn-signup">Sign Up</button>
+        <button onclick="handleSignup()" class="btn-signup">Create Account</button>
         <p>Already have a token? <a href="login.html">Login here</a></p>
-        <div id="msg"></div>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2s_dMOLrjx6WcZ2aTnrX9yWFJWDz8eqhShtX_dE7oH6wEEDVL2rbVqt-F4Zu7QnMkSA/exec";
-
         async function handleSignup() {
             const id = document.getElementById('team-id').value;
             const email = document.getElementById('email-id').value;
             const btn = document.querySelector('button');
             
-            if(!id || !email) return alert("Fill all fields!");
+            if(!id || !email) return alert("Please fill in both fields.");
             
             btn.innerText = "Processing...";
             btn.disabled = true;
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?action=register&teamId=${id}&email=${email}`);
-                const data = await res.json();
+                // Folosim SCRIPT_URL definit in config.js
+                const response = await fetch(`${SCRIPT_URL}?action=register&teamId=${id}&email=${email}`);
+                const data = await response.json();
+                
                 if(data.success) {
-                    alert("Success! Check your email for the Token.");
+                    alert("Account created! Check your email for the token.");
                     window.location.href = "login.html";
                 } else {
                     alert("Error: " + data.msg);
                 }
-            } catch(e) { alert("Connection Error!"); }
-            btn.innerText = "Sign Up";
-            btn.disabled = false;
+            } catch(e) {
+                console.error(e);
+                alert("Connection Error! Make sure your Script is deployed as 'Anyone'.");
+            } finally {
+                btn.innerText = "Create Account";
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
