@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECODE - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card">
+        <h1 class="logo">DECODE <span>Portal</span></h1>
+        <h2>Login</h2>
+        <input type="number" id="team-id" placeholder="Team Number">
+        <input type="text" id="token-id" placeholder="Your Token">
+        <button onclick="handleLogin()" class="btn-login">Login</button>
+        <p>New here? <a href="signup.html">Sign up</a></p>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsGAe1GrAsISRhEyfAjJ4g-vQnTmNylAilVQsGL8pWT84WMaVA0EQOeOafYTaeuWPmAA/exec";
+
+        async function handleLogin() {
+            const id = document.getElementById('team-id').value;
+            const tk = document.getElementById('token-id').value;
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`);
+                const data = await res.json();
+
+                if(data.success) {
+                    sessionStorage.setItem('team', id);
+                    sessionStorage.setItem('token', tk);
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("Invalid Credentials!");
+                }
+            } catch(e) { alert("Server Error!"); }
+        }
+    </script>
+</body>
+</html>
