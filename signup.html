@@ -10,9 +10,9 @@
     <div class="card">
         <h1 class="logo">DECODE <span>Portal</span></h1>
         <h2>Create Account</h2>
-        <input type="number" id="team-id" placeholder="Team Number (e.g. 17962)">
+        <input type="number" id="team-id" placeholder="Team Number">
         <input type="email" id="email-id" placeholder="Official Email Address">
-        <button onclick="handleSignup()" class="btn-signup">Create Account</button>
+        <button onclick="handleSignup()">Create Account</button>
         <p>Already have a token? <a href="login.html">Login here</a></p>
     </div>
 
@@ -22,16 +22,15 @@
             const id = document.getElementById('team-id').value;
             const email = document.getElementById('email-id').value;
             const btn = document.querySelector('button');
-            
-            if(!id || !email) return alert("Please fill in both fields.");
+            if(!id || !email) return alert("Please fill both fields.");
             
             btn.innerText = "Processing...";
             btn.disabled = true;
 
             try {
-                // Folosim SCRIPT_URL definit in config.js
-                const response = await fetch(`${SCRIPT_URL}?action=register&teamId=${id}&email=${email}`);
-                const data = await response.json();
+                const url = `${SCRIPT_URL}?action=register&teamId=${id}&email=${email}`;
+                const res = await fetch(url, { method: 'GET' });
+                const data = await res.json();
                 
                 if(data.success) {
                     alert("Account created! Check your email for the token.");
@@ -40,8 +39,7 @@
                     alert("Error: " + data.msg);
                 }
             } catch(e) {
-                console.error(e);
-                alert("Connection Error! Make sure your Script is deployed as 'Anyone'.");
+                alert("Connection Error. Check if Script is set to 'Anyone'.");
             } finally {
                 btn.innerText = "Create Account";
                 btn.disabled = false;
