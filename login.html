@@ -1,22 +1,56 @@
-<script src="config.js"></script>
-<script>
-    function handleLogin() {
-        const id = document.getElementById('team-id').value;
-        const tk = document.getElementById('token-id').value;
-        
-        const script = document.createElement('script');
-        script.src = `${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}&callback=loginCallback`;
-        document.body.appendChild(script);
-        script.onload = () => document.body.removeChild(script);
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECODE - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card">
+        <h1 class="logo">DECODE <span>Portal</span></h1>
+        <h2>Login</h2>
+        <input type="number" id="team-id" placeholder="Team Number">
+        <input type="text" id="token-id" placeholder="Access Token">
+        <button onclick="handleLogin()" id="btn-login">Login</button>
+        <p>New team? <a href="signup.html" style="color:#76c893">Sign up here</a></p>
+    </div>
 
-    function loginCallback(data) {
-        if(data.success) {
-            sessionStorage.setItem('team', document.getElementById('team-id').value);
-            sessionStorage.setItem('token', document.getElementById('token-id').value);
-            window.location.href = "dashboard.html";
-        } else {
-            alert("Invalid credentials!");
+    <script src="config.js"></script>
+    <script>
+        async function handleLogin() {
+            const id = document.getElementById('team-id').value;
+            const tk = document.getElementById('token-id').value;
+            const btn = document.getElementById('btn-login');
+
+            if(!id || !tk) return alert("Please fill both fields.");
+
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            const url = `${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`;
+            console.log("Trimitere cerere Login către:", url);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("Răspuns primit:", data);
+
+                if(data.success) {
+                    sessionStorage.setItem('team', id);
+                    sessionStorage.setItem('token', tk);
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("Invalid team or token.");
+                }
+            } catch(e) {
+                console.error("EROARE LA LOGIN:", e);
+                alert("Login Error! Verifică consola (F12).");
+            } finally {
+                btn.innerText = "Login";
+                btn.disabled = false;
+            }
         }
-    }
-</script>
+    </script>
+</body>
+</html>
