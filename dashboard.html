@@ -28,60 +28,33 @@
             </div>
 
             <div class="input-group">
-                <label>ALLIANCE POSITION</label>
-                <select id="up-pos">
-                    <option value="Red-1">Red 1</option>
-                    <option value="Red-2">Red 2</option>
-                    <option value="Blue-1">Blue 1</option>
-                    <option value="Blue-2">Blue 2</option>
+                <label>AUTO POSITION (Column Selector)</label>
+                <select id="auto-pos-select">
+                    <option value="rap">RED - Aproape</option>
+                    <option value="rdep">RED - Departe</option>
+                    <option value="aap">BLUE - Aproape</option>
+                    <option value="adep">BLUE - Departe</option>
                 </select>
             </div>
 
             <div class="counter-card yellow-border">
-                <label class="label-yellow">R AP SCORE</label>
+                <label class="label-yellow">AUTO PIECES</label>
                 <div class="action-row">
-                    <button class="btn-main btn-yellow" onclick="score('rap', 'P')">+ PIECE</button>
-                    <button class="btn-main btn-red" onclick="score('rap', 'M')">+ MISS</button>
+                    <button class="btn-main btn-yellow" onclick="updateAuto(1, false)">+ PIECE</button>
+                    <button class="btn-main btn-red" onclick="updateAuto(1, true)">+ MISS</button>
                     <div class="display-box">
-                        <span id="txt-rap">0(0)</span>
-                        <button class="btn-undo-mini" onclick="undo('rap')">Undo</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="counter-card yellow-border">
-                <label class="label-yellow">R DEP SCORE</label>
-                <div class="action-row">
-                    <button class="btn-main btn-yellow" onclick="score('rdep', 'P')">+ PIECE</button>
-                    <button class="btn-main btn-red" onclick="score('rdep', 'M')">+ MISS</button>
-                    <div class="display-box">
-                        <span id="txt-rdep">0(0)</span>
-                        <button class="btn-undo-mini" onclick="undo('rdep')">Undo</button>
+                        <span id="txt-auto">0(0)</span>
+                        <button class="btn-undo-mini" onclick="undoAuto()">Undo</button>
                     </div>
                 </div>
             </div>
 
             <div class="counter-card green-border">
-                <label class="label-green">A AP SCORE</label>
+                <label class="label-green">TELEOP PIECES</label>
                 <div class="action-row">
-                    <button class="btn-main btn-green" onclick="score('aap', 'P')">+ PIECE</button>
-                    <button class="btn-main btn-red" onclick="score('aap', 'M')">+ MISS</button>
-                    <div class="display-box">
-                        <span id="txt-aap">0(0)</span>
-                        <button class="btn-undo-mini" onclick="undo('aap')">Undo</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="counter-card green-border">
-                <label class="label-green">A DEP SCORE</label>
-                <div class="action-row">
-                    <button class="btn-main btn-green" onclick="score('adep', 'P')">+ PIECE</button>
-                    <button class="btn-main btn-red" onclick="score('adep', 'M')">+ MISS</button>
-                    <div class="display-box">
-                        <span id="txt-adep">0(0)</span>
-                        <button class="btn-undo-mini" onclick="undo('adep')">Undo</button>
-                    </div>
+                    <button class="btn-main btn-green" onclick="updateTele(1)">+ PIECE</button>
+                    <span class="count-val" id="txt-tele">0</span>
+                    <button class="btn-undo-mini" onclick="updateTele(-1)">Undo</button>
                 </div>
             </div>
 
@@ -93,55 +66,38 @@
             <button onclick="sendData()" class="btn-generate" id="btn-submit">GENERATE REPORT</button>
         </div>
 
-        <div id="page-intel" class="page card hidden">
-            <h2>Deep Intel</h2>
-            <input type="number" id="search-target" placeholder="Enter Team #">
-            <button class="btn-generate" onclick="searchTeam()">SEARCH DATABASE</button>
-            <div id="intel-results" style="margin-top:20px; text-align:left;"></div>
-        </div>
-
-        <div id="page-records" class="page card hidden">
-            <h2>Your Team Records</h2>
-            <button class="btn-undo" onclick="fetchMyData()">REFRESH DATA</button>
-            <div id="db-results" style="margin-top:20px; font-size: 12px; overflow-x: auto;"></div>
-        </div>
-
         <div id="success-screen" class="page card hidden">
             <span class="checkmark">✓</span>
             <h2>Report Sent!</h2>
-            <p style="color:#888; margin-bottom: 20px;">Data uplinked to Sheets.</p>
+            <p style="color:#888; margin-bottom: 20px;">Data added to your column.</p>
             <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script>
-        // --- LOGICA COUNTER ---
-        let stats = {
-            rap: { s: 0, m: 0 },
-            rdep: { s: 0, m: 0 },
-            aap: { s: 0, m: 0 },
-            adep: { s: 0, m: 0 }
-        };
+        // --- LOGICA VARIABILE ---
+        let autoS = 0, autoM = 0, teleS = 0;
 
-        function score(key, type) {
-            if(type === 'P') stats[key].s++; else stats[key].m++;
-            renderBox(key);
+        function updateAuto(val, isMiss) {
+            if(isMiss) autoM += val; else autoS += val;
+            renderAuto();
         }
 
-        function undo(key) {
-            if(stats[key].s > 0) stats[key].s--;
-            else if(stats[key].m > 0) stats[key].m--;
-            renderBox(key);
+        function undoAuto() {
+            if(autoS > 0) autoS--; else if(autoM > 0) autoM--;
+            renderAuto();
         }
 
-        function renderBox(key) {
-            let s = stats[key].s;
-            let total = s + stats[key].m;
-            document.getElementById(`txt-${key}`).innerText = `${s}(${total})`;
+        function renderAuto() {
+            document.getElementById('txt-auto').innerText = `${autoS}(${autoS + autoM})`;
         }
 
-        // --- NAVIGARE ---
+        function updateTele(val) {
+            teleS = Math.max(0, teleS + val);
+            document.getElementById('txt-tele').innerText = teleS;
+        }
+
         function showPage(p) {
             document.querySelectorAll('.page').forEach(div => div.classList.add('hidden'));
             document.getElementById('page-' + p).classList.remove('hidden');
@@ -149,64 +105,61 @@
 
         function logout() { sessionStorage.clear(); window.location.href = "login.html"; }
 
-        // --- TRIMITERE DATE ---
+        // --- TRIMITERE DATE (Logic Dropdown) ---
         async function sendData() {
             const target = document.getElementById('up-target').value;
             if(!target) return alert("Please enter Team ID");
 
             const btn = document.getElementById('btn-submit');
+            const pos = document.getElementById('auto-pos-select').value; // rap, rdep, aap, sau adep
             const isParked = document.getElementById('up-park').checked;
             const pSuffix = isParked ? "(P)" : "";
 
             btn.innerText = "UPLINKING...";
             btn.disabled = true;
 
-            const format = (key) => `${stats[key].s}(${stats[key].s + stats[key].m})${pSuffix}`;
+            // Construim valoarea finala x(x+y)(P)
+            const autoVal = `${autoS}(${autoS + autoM})${pSuffix}`;
 
+            // Parametrii trimisi catre Apps Script
             const params = new URLSearchParams({
                 action: 'uplink',
                 myTeam: sessionStorage.getItem('team'),
                 myToken: sessionStorage.getItem('token'),
                 target: target,
-                rap: format('rap'),
-                rdep: format('rdep'),
-                aap: format('aap'),
-                adep: format('adep'),
                 match: document.getElementById('up-match').value,
-                pos: document.getElementById('up-pos').value,
+                tele: teleS,
                 park: isParked ? "YES" : "NO",
-                autos: `R:${format('rap')}|A:${format('adep')}`
+                [pos]: autoVal // Aici se alege coloana din Apps Script (B, C, D sau E)
             });
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
-                const data = await res.json();
-                if(data.success) {
-                    document.getElementById('page-scout').classList.add('hidden');
-                    document.getElementById('success-screen').classList.remove('hidden');
-                }
-            } catch(e) { alert("Error!"); }
-            finally { btn.innerText = "GENERATE REPORT"; btn.disabled = false; }
+                // 'no-cors' rezolva eroarea rosie din consola
+                await fetch(`${SCRIPT_URL}?${params.toString()}`, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                
+                // Fortam afisarea succesului
+                document.getElementById('page-scout').classList.add('hidden');
+                document.getElementById('success-screen').classList.remove('hidden');
+            } catch(e) {
+                alert("Connection Error! Check console.");
+                console.error(e);
+            } finally {
+                btn.innerText = "GENERATE REPORT";
+                btn.disabled = false;
+            }
         }
 
         function resetScout() {
-            stats = { rap: {s:0,m:0}, rdep: {s:0,m:0}, aap: {s:0,m:0}, adep: {s:0,m:0} };
-            ['rap','rdep','aap','adep'].forEach(k => renderBox(k));
+            autoS = 0; autoM = 0; teleS = 0;
+            renderAuto();
+            document.getElementById('txt-tele').innerText = "0";
             document.getElementById('up-target').value = "";
             document.getElementById('up-park').checked = false;
             document.getElementById('success-screen').classList.add('hidden');
             document.getElementById('page-scout').classList.remove('hidden');
-        }
-
-        // --- INTEL & DATABASE (STUB) ---
-        async function searchTeam() {
-            const target = document.getElementById('search-target').value;
-            const res = await fetch(`${SCRIPT_URL}?action=intel&myTeam=${sessionStorage.getItem('team')}&myToken=${sessionStorage.getItem('token')}&target=${target}`);
-            const data = await res.json();
-            const div = document.getElementById('intel-results');
-            if(data.success) {
-                div.innerHTML = data.history.map(r => `<div class="counter-card" style="border-left-color:var(--primary)">Match ${r[5]}: ${r[1]} / ${r[2]} / ${r[3]}</div>`).join('');
-            } else { div.innerText = "No data found."; }
         }
     </script>
 </body>
