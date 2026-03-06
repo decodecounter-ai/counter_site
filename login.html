@@ -12,8 +12,8 @@
         <h2>Login</h2>
         <input type="number" id="team-id" placeholder="Team Number">
         <input type="text" id="token-id" placeholder="Access Token">
-        <button onclick="handleLogin()" class="btn-login">Login</button>
-        <p>Need an account? <a href="signup.html">Sign up here</a></p>
+        <button onclick="handleLogin()">Login</button>
+        <p>New team? <a href="signup.html">Sign up here</a></p>
     </div>
 
     <script src="config.js"></script>
@@ -21,9 +21,11 @@
         async function handleLogin() {
             const id = document.getElementById('team-id').value;
             const tk = document.getElementById('token-id').value;
+            if(!id || !tk) return alert("Fill all fields.");
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`);
+                const url = `${SCRIPT_URL}?action=login&teamId=${id}&token=${tk}`;
+                const res = await fetch(url, { method: 'GET' });
                 const data = await res.json();
 
                 if(data.success) {
@@ -31,7 +33,7 @@
                     sessionStorage.setItem('token', tk);
                     window.location.href = "dashboard.html";
                 } else {
-                    alert("Invalid team number or token.");
+                    alert("Invalid team or token.");
                 }
             } catch(e) { alert("Server connection failed."); }
         }
