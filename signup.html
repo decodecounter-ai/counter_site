@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECODE - Sign Up</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card">
+        <h1 class="logo">DECODE <span>Portal</span></h1>
+        <h2>Create Account</h2>
+        <input type="number" id="team-id" placeholder="Team Number (e.g. 19121)">
+        <input type="email" id="email-id" placeholder="Official Email Address">
+        <button onclick="handleSignup()" class="btn-signup">Sign Up</button>
+        <p>Already have a token? <a href="login.html">Login here</a></p>
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsGAe1GrAsISRhEyfAjJ4g-vQnTmNylAilVQsGL8pWT84WMaVA0EQOeOafYTaeuWPmAA/exec";
+
+        async function handleSignup() {
+            const id = document.getElementById('team-id').value;
+            const email = document.getElementById('email-id').value;
+            const btn = document.querySelector('button');
+            
+            if(!id || !email) return alert("Fill all fields!");
+            
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=register&teamId=${id}&email=${email}`);
+                const data = await res.json();
+                if(data.success) {
+                    alert("Success! Check your email for the Token.");
+                    window.location.href = "login.html";
+                } else {
+                    alert("Error: " + data.msg);
+                }
+            } catch(e) { alert("Connection Error!"); }
+            btn.innerText = "Sign Up";
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
