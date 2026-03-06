@@ -1,45 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Sign Up</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="card">
-        <h1 class="logo">DECODE <span>Portal</span></h1>
-        <h2>Create Account</h2>
-        <input type="number" id="team-id" placeholder="Team Number">
-        <input type="email" id="email-id" placeholder="Official Email Address">
-        <button onclick="handleSignup()">Create Account</button>
-        <p>Already have a token? <a href="login.html">Login here</a></p>
-    </div>
-    <script src="config.js"></script>
-    <script>
-        async function handleSignup() {
-            const id = document.getElementById('team-id').value;
-            const email = document.getElementById('email-id').value;
-            const btn = document.querySelector('button');
-            if (!id || !email) return alert("Please fill both fields.");
+<script src="config.js"></script>
+<script>
+    function handleSignup() {
+        const id = document.getElementById('team-id').value;
+        const email = document.getElementById('email-id').value;
+        if(!id || !email) return alert("Fill all fields!");
 
-            btn.innerText = "Processing...";
-            btn.disabled = true;
+        // Aceasta este magia JSONP:
+        const script = document.createElement('script');
+        script.src = `${SCRIPT_URL}?action=register&teamId=${id}&email=${email}&callback=signupCallback`;
+        document.body.appendChild(script);
+        
+        // Ștergem scriptul după ce se încarcă pentru a păstra pagina curată
+        script.onload = () => document.body.removeChild(script);
+    }
 
-            const url = `${SCRIPT_URL}?action=register&teamId=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`;
-
-            try {
-                // no-cors trimite requestul, dar nu putem citi raspunsul
-                await fetch(url, { method: 'GET', mode: 'no-cors' });
-                alert("Request sent! Your token will arrive by email in 1-2 minutes.\n\nAfter receiving it, login with your Team Number + Token.");
-                window.location.href = "login.html";
-            } catch(e) {
-                alert("Connection Error. Please try again.");
-            } finally {
-                btn.innerText = "Create Account";
-                btn.disabled = false;
-            }
+    // Funcția care primește datele
+    function signupCallback(data) {
+        if(data.success) {
+            alert("Success! Check your email.");
+            window.location.href = "login.html";
+        } else {
+            alert("Error: " + data.msg);
         }
-    </script>
-</body>
-</html>
+    }
+</script>
