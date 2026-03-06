@@ -12,7 +12,7 @@
             <button onclick="showPage('scout')">Uplink</button>
             <button onclick="showPage('intel')">Unified Intel</button>
             <button onclick="showPage('records')">My Records</button>
-            <button onclick="logout()" style="background:#e63946">Exit</button>
+            <button onclick="logout()" style="background:#e63946">Logout</button>
         </nav>
 
         <div id="page-scout" class="page card">
@@ -25,30 +25,29 @@
                 <input type="number" id="up-adep" placeholder="A dep">
             </div>
             <input type="number" id="up-scor" placeholder="Total Score">
-            <input type="text" id="up-autos" placeholder="Auto Sequence (e.g. L,M,R)">
-            <button onclick="sendData()" class="btn-login">Submit to Cloud</button>
+            <input type="text" id="up-autos" placeholder="Auto Sequence">
+            <button onclick="sendData()" class="btn-login">Submit Data</button>
         </div>
 
         <div id="page-intel" class="page card hidden">
             <h2>🔍 Deep Intel Search</h2>
             <div class="grid" style="grid-template-columns: 3fr 1fr;">
                 <input type="number" id="search-target" placeholder="Team ID">
-                <button onclick="runIntel()" class="btn-login" style="margin:8px 0;">Scan</button>
+                <button onclick="runIntel()" class="btn-login">Scan</button>
             </div>
             <div id="intel-output"></div>
         </div>
 
-        <div id="page-records" class="page card hidden" style="max-width: 100%;">
-            <h2>📋 Your Database</h2>
+        <div id="page-records" class="page card hidden">
+            <h2>📋 Database View</h2>
             <div id="table-view" class="scroll-table"></div>
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        const SCRIPT_URL = "const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2s_dMOLrjx6WcZ2aTnrX9yWFJWDz8eqhShtX_dE7oH6wEEDVL2rbVqt-F4Zu7QnMkSA/exec";";
         const team = sessionStorage.getItem('team');
         const token = sessionStorage.getItem('token');
-
         if(!team || !token) window.location.href = "login.html";
 
         function showPage(id) {
@@ -64,7 +63,7 @@
                 aap: val('up-aap'), adep: val('up-adep'), scor: val('up-scor'), autos: val('up-autos')
             });
             const res = await fetch(`${SCRIPT_URL}?${p.toString()}`);
-            if((await res.json()).success) alert("Data Saved!");
+            if((await res.json()).success) alert("Data Sent Successfully!");
         }
 
         async function runIntel() {
@@ -76,9 +75,9 @@
                     <div class="stat-item">
                         <p><b>Matches:</b> ${d.stats.count} | <b>Avg Score:</b> ${d.stats.avgScor}</p>
                         <p><b>RAP:</b> ${d.stats.avgRap} | <b>RDEP:</b> ${d.stats.avgRdep}</p>
-                        <p><b>Auto Patterns:</b> <br><small>${d.stats.autoHistory}</small></p>
+                        <p><b>Autos:</b> <br><small>${d.stats.autoHistory}</small></p>
                     </div>`;
-            } else alert(d.msg);
+            } else alert("No data found for this team.");
         }
 
         async function loadRecords() {
