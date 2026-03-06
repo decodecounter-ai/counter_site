@@ -1,26 +1,55 @@
-<script src="config.js"></script>
-<script>
-    function handleSignup() {
-        const id = document.getElementById('team-id').value;
-        const email = document.getElementById('email-id').value;
-        if(!id || !email) return alert("Fill all fields!");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECODE - Sign Up</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card">
+        <h1 class="logo">DECODE <span>Portal</span></h1>
+        <h2>Create Account</h2>
+        <input type="number" id="team-id" placeholder="Team Number (e.g. 17962)">
+        <input type="email" id="email-id" placeholder="Official Email">
+        <button onclick="handleSignup()" id="btn-signup">Create Account</button>
+        <p>Already have a token? <a href="login.html" style="color:#76c893">Login here</a></p>
+    </div>
 
-        // Aceasta este magia JSONP:
-        const script = document.createElement('script');
-        script.src = `${SCRIPT_URL}?action=register&teamId=${id}&email=${email}&callback=signupCallback`;
-        document.body.appendChild(script);
-        
-        // Ștergem scriptul după ce se încarcă pentru a păstra pagina curată
-        script.onload = () => document.body.removeChild(script);
-    }
+    <script src="config.js"></script>
+    <script>
+        async function handleSignup() {
+            const id = document.getElementById('team-id').value;
+            const email = document.getElementById('email-id').value;
+            const btn = document.getElementById('btn-signup');
 
-    // Funcția care primește datele
-    function signupCallback(data) {
-        if(data.success) {
-            alert("Success! Check your email.");
-            window.location.href = "login.html";
-        } else {
-            alert("Error: " + data.msg);
+            if(!id || !email) return alert("Please fill both fields.");
+
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            const url = `${SCRIPT_URL}?action=register&teamId=${id}&email=${email}`;
+            console.log("Trimitere cerere Signup către:", url);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("Răspuns primit:", data);
+
+                if(data.success) {
+                    alert("Account created! Check your email for the token.");
+                    window.location.href = "login.html";
+                } else {
+                    alert("Error: " + data.msg);
+                }
+            } catch(e) {
+                console.error("EROARE LA SIGNUP:", e);
+                alert("Connection Error! Verifică consola (F12).");
+            } finally {
+                btn.innerText = "Create Account";
+                btn.disabled = false;
+            }
         }
-    }
-</script>
+    </script>
+</body>
+</html>
