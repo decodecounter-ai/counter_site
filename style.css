@@ -22,3 +22,28 @@ button:hover { opacity: 0.9; }
 table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
 td { border: 1px solid #2d2f45; padding: 10px; text-align: left; }
 a { color: var(--primary); text-decoration: none; }
+.counter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--input);
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+}
+.counter-row span { font-weight: bold; width: 60px; }
+.counter-row button { 
+    width: 40px; height: 40px; 
+    margin: 0; padding: 0; 
+    background: #2d2f45; color: white; 
+}
+.counter-row input { 
+    width: 50px; text-align: center; 
+    border: none; background: transparent; 
+    font-size: 1.2em; font-weight: bold;
+}
+#up-pos {
+    width: 100%; padding: 14px; margin: 8px 0;
+    background: var(--input); border: 1px solid #2d2f45;
+    color: white; border-radius: 8px;
+}
