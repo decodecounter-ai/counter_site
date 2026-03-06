@@ -3,33 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v7.5</title>
+    <title>DECODE - Dashboard v8.5</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Database & Intel Styling */
         #db-content { width: 100%; overflow-x: auto; white-space: nowrap; }
         .db-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         .db-table th, .db-table td { padding: 10px; border: 1px solid #30363d; text-align: center; min-width: 90px; }
         .db-table th { background: #21262d; color: #f1e05a; }
+
+        /* Intel Cards */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-card { background: #1c2128; padding: 12px; border-radius: 8px; border-bottom: 3px solid #30363d; }
+        .stat-card label { font-size: 9px; color: #8b949e; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .stat-card div { font-size: 18px; font-weight: bold; color: #f1e05a; }
         
-        /* Mesaj temporar de succes */
-        .toast-success {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #238636;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            z-index: 1000;
-            display: none;
+        /* Mini Graph */
+        .trend-container { 
+            display: flex; align-items: flex-end; gap: 4px; height: 50px; 
+            margin-top: 10px; padding: 5px; background: rgba(255,255,255,0.03); border-radius: 4px;
         }
+        .trend-bar { flex: 1; background: #238636; border-radius: 2px 2px 0 0; min-width: 12px; transition: height 0.3s; }
+        
+        .auto-max-box { background: #0d1117; padding: 8px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .auto-max-box b { color: #58a6ff; }
     </style>
 </head>
 <body>
-    <div id="toast" class="toast-success">Uplink Successful! Resetting...</div>
-
     <div id="app" style="width: 100%; max-width: 480px;">
         <nav class="navbar">
             <button onclick="showPage('scout')">UPLINK</button>
@@ -104,8 +104,11 @@
 
         <div id="page-intel" class="page hidden">
             <div class="card-scout">
-                <input type="number" id="intel-search" placeholder="Team ID">
-                <button onclick="fetchIntel()" class="btn-generate">SEARCH</button>
+                <div class="input-group">
+                    <label>TARGET TEAM ANALYSIS</label>
+                    <input type="number" id="intel-search" placeholder="Enter Team ID...">
+                </div>
+                <button onclick="fetchIntel()" class="btn-generate">RUN ANALYTICS</button>
                 <div id="intel-results"></div>
             </div>
         </div>
@@ -117,7 +120,8 @@
         <div id="success-screen" class="page card hidden">
             <span class="checkmark">✓</span>
             <h2>Uplink Successful!</h2>
-            <p>Form will reset in 3 seconds...</p>
+            <p style="color:#8b949e">Syncing with Cloud Database...</p>
+            <p style="margin-top:10px; font-size:12px;">Next match form ready in 3s.</p>
         </div>
     </div>
 
@@ -132,47 +136,36 @@
 
         function showPage(p) { 
             document.querySelectorAll('.page').forEach(d => d.classList.add('hidden')); 
-            const targetId = p.includes('screen') || p.includes('page') ? p : 'page-'+p;
-            document.getElementById(targetId).classList.remove('hidden'); 
+            const id = p.includes('screen') || p.includes('page') ? p : 'page-'+p;
+            document.getElementById(id).classList.remove('hidden'); 
         }
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
             if(!target) return alert("Team ID missing!");
-            
             const btn = document.getElementById('btn-submit');
             const pos = document.getElementById('auto-pos-select').value;
             const park = document.getElementById('up-park').checked;
             const rp = document.getElementById('up-rp').value;
             const autoVal = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
 
-            btn.disabled = true; 
-            btn.innerText = "UPLINKING...";
+            btn.disabled = true; btn.innerText = "UPLINKING...";
 
-            const params = new URLSearchParams({
+            const p = new URLSearchParams({
                 action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
                 target: target, match: document.getElementById('up-match').value,
                 auto_type: pos, auto_val: autoVal, tele: stats.tS, rp: rp
             });
 
-            // Trimitem datele
-            fetch(`${SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' });
+            fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
 
-            // LOGICA DE REFRESH AUTOMAT
             setTimeout(() => {
-                // 1. Afișăm ecranul de succes
                 showPage('success-screen');
-                
-                // 2. Resetăm formularul în fundal
-                resetScout(); 
-
-                // 3. După încă 3 secunde, ne întoarcem la UPLINK
+                resetScout();
                 setTimeout(() => {
                     showPage('scout');
-                    btn.disabled = false; 
-                    btn.innerText = "GENERATE REPORT";
+                    btn.disabled = false; btn.innerText = "GENERATE REPORT";
                 }, 3000);
-
             }, 500);
         }
 
@@ -182,35 +175,49 @@
             document.getElementById('up-target').value = "";
             document.getElementById('up-rp').value = "0";
             document.getElementById('up-park').checked = false;
-            
-            // Creștem automat numărul meciului cu 1 pentru următorul meci
-            const matchInput = document.getElementById('up-match');
-            if(matchInput.value) matchInput.value = parseInt(matchInput.value) + 1;
+            const m = document.getElementById('up-match');
+            m.value = parseInt(m.value || 0) + 1;
         }
 
         async function fetchIntel() {
             const t = document.getElementById('intel-search').value;
             const res = document.getElementById('intel-results');
+            if(!t) return;
             const p = new URLSearchParams({ action: 'intel', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'), target: t });
-            res.innerHTML = "Searching...";
+            res.innerHTML = "<p>Crunching numbers...</p>";
+
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
                 const j = await r.json();
                 if(j.success) {
-                    res.innerHTML = `<div style="border:1px solid #58a6ff; padding:15px; border-radius:8px; margin-top:10px;">
-                        <h3>TEAM ${j.data.target}</h3><hr>
-                        <p>Matches: ${j.data.matches}</p>
-                        <p>Teleop: ${j.data.tele}</p>
-                        <p>RP History: ${j.data.rp}</p>
-                    </div>`;
-                } else res.innerHTML = j.msg;
-            } catch(e) { res.innerHTML = "Error!"; }
+                    const d = j.data;
+                    res.innerHTML = `
+                        <div style="margin-top:20px; text-align:left;">
+                            <h2 style="color:var(--yellow); border-bottom:1px solid #333;">TEAM ${d.target}</h2>
+                            
+                            <div class="stat-grid">
+                                <div class="stat-card"><label>Avg Teleop</label><div>${d.avgTele}</div></div>
+                                <div class="stat-card"><label>Last 3 Avg</label><div>${d.avgLast3}</div></div>
+                            </div>
+
+                            <label style="font-size:10px; color:#8b949e;">AUTO MAX PIECES</label>
+                            <div class="auto-max-box">Red AP / DEP: <b>${d.maxAuto.rap} / ${d.maxAuto.rdep}</b></div>
+                            <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
+
+                            <label style="font-size:10px; color:#8b949e; margin-top:15px; display:block;">TELEOP PERFORMANCE TREND</label>
+                            <div class="trend-container">
+                                ${d.teleHistory.map(v => `<div class="trend-bar" style="height:${Math.min(100, (v/15)*100)}%" title="${v}"></div>`).join('')}
+                            </div>
+                            <div style="font-size:9px; color:#555; text-align:center; margin-top:4px;">History (Left to Right)</div>
+                        </div>`;
+                } else res.innerHTML = `<p style="color:red; margin-top:10px;">${j.msg}</p>`;
+            } catch(e) { res.innerHTML = "Error fetching intel."; }
         }
 
         async function fetchDatabase() {
             const content = document.getElementById('db-content');
             const p = new URLSearchParams({ action: 'mydata', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token') });
-            content.innerHTML = "Loading...";
+            content.innerHTML = "Syncing table...";
             try {
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
                 const j = await r.json();
@@ -228,7 +235,7 @@
                     }
                     content.innerHTML = h + '</table>';
                 }
-            } catch(e) { content.innerHTML = "Error!"; }
+            } catch(e) { content.innerHTML = "Database error."; }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
