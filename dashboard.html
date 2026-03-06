@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v10.5</title>
+    <title>DECODE - Dashboard v11.0</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* Database & Intel Styling */
@@ -12,31 +12,32 @@
         .db-table th, .db-table td { padding: 10px; border: 1px solid #30363d; text-align: center; min-width: 90px; }
         .db-table th { background: #21262d; color: #f1e05a; }
 
-        /* Intel Cards */
+        /* Intel Cards Original Design */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
         .stat-card { background: #1c2128; padding: 12px; border-radius: 8px; border-bottom: 3px solid #30363d; }
         .stat-card label { font-size: 9px; color: #8b949e; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .stat-card div { font-size: 20px; font-weight: bold; color: #f1e05a; }
         
-        /* Line Chart SVG Styling */
-        .chart-container { 
-            background: rgba(0,0,0,0.3); 
-            border-radius: 8px; 
-            padding: 20px 10px; 
+        /* Line Chart Integration */
+        .trend-container { 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 4px; 
+            padding: 10px; 
             margin-top: 10px;
-            border: 1px solid #333;
-            overflow: visible;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .chart-svg { overflow: visible; width: 100%; height: 100px; }
+        .chart-svg { width: 100%; height: 100%; overflow: visible; }
         .chart-line { fill: none; stroke: #238636; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-        .chart-point { fill: #f1e05a; stroke: #1c2128; stroke-width: 2; }
+        .chart-point { fill: #f1e05a; stroke: #1c2128; stroke-width: 1.5; }
         
         .auto-max-box { background: #0d1117; padding: 8px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; border: 1px solid #222; }
         .auto-max-box b { color: #58a6ff; }
         .hidden { display: none !important; }
         
-        @keyframes drawLine { from { stroke-dashoffset: 600; } to { stroke-dashoffset: 0; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes drawLine { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
     </style>
 </head>
 <body>
@@ -53,7 +54,7 @@
                 <div class="scout-header" style="display: flex; gap:10px;">
                     <div class="input-group" style="flex:2">
                         <label>TEAM ID</label>
-                        <input type="number" id="up-target" placeholder="Ex: 20000">
+                        <input type="number" id="up-target" placeholder="Ex: 19121">
                     </div>
                     <div class="input-group" style="flex:1">
                         <label>MATCH #</label>
@@ -104,7 +105,7 @@
                 </div>
 
                 <div class="checkbox-card" style="display:flex; align-items:center; gap:10px; margin: 15px 0;">
-                    <input type="checkbox" id="up-park" style="width:22px; height:22px;">
+                    <input type="checkbox" id="up-park" style="width:20px; height:20px;">
                     <label for="up-park">PARK / ASCENT SUCCESS (P)</label>
                 </div>
 
@@ -115,7 +116,7 @@
         <div id="page-intel" class="page hidden">
             <div class="card-scout">
                 <div class="input-group">
-                    <label>TARGET ANALYSIS</label>
+                    <label>SEARCH TEAM DATA</label>
                     <input type="number" id="intel-search" placeholder="Enter Team ID...">
                 </div>
                 <button onclick="fetchIntel()" class="btn-generate">RUN ANALYTICS</button>
@@ -127,10 +128,10 @@
             <div class="card-scout"><div id="db-content"></div></div>
         </div>
 
-        <div id="success-screen" class="page hidden" style="text-align:center; padding-top: 80px;">
-            <div style="font-size: 80px; color: #238636; margin-bottom: 20px;">✓</div>
-            <h2 style="color:white;">Uplink Successful!</h2>
-            <p style="color:#8b949e">Form resetting in 3 seconds...</p>
+        <div id="success-screen" class="page hidden" style="text-align:center; padding: 50px 20px;">
+            <div style="font-size: 60px; color: #238636;">✓</div>
+            <h2 style="color:white;">Uplink Sent!</h2>
+            <p style="color:#8b949e">Cloud DB Syncing...</p>
         </div>
     </div>
 
@@ -151,38 +152,27 @@
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Missing Team ID!");
+            if(!target) return alert("Team ID missing!");
             const btn = document.getElementById('btn-submit');
-            const match = document.getElementById('up-match').value;
-            const park = document.getElementById('up-park').checked;
-            
             const p = new URLSearchParams({
                 action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
-                target: target, match: match,
+                target: target, match: document.getElementById('up-match').value,
                 auto_type: document.getElementById('auto-pos-select').value, 
-                auto_val: `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`, 
+                auto_val: `${stats.aS}(${stats.aS + stats.aM})${document.getElementById('up-park').checked ? "(P)" : ""}`, 
                 tele: stats.tS, rp: document.getElementById('up-rp').value
             });
-
-            btn.disabled = true; btn.innerText = "SENDING...";
+            btn.disabled = true; btn.innerText = "UPLINKING...";
             fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
-
             setTimeout(() => {
                 showPage('success-screen');
                 resetScout();
-                setTimeout(() => {
-                    showPage('scout');
-                    btn.disabled = false; btn.innerText = "GENERATE REPORT";
-                }, 3000);
-            }, 500);
+                setTimeout(() => { showPage('scout'); btn.disabled = false; btn.innerText = "GENERATE REPORT"; }, 3000);
+            }, 600);
         }
 
         function resetScout() {
             stats = { aS: 0, aM: 0, tS: 0 };
-            ['aS','aM','tS'].forEach(k => {
-                const el = document.getElementById('val-'+k);
-                if(el) el.innerText = "0";
-            });
+            ['aS','aM','tS'].forEach(k => document.getElementById('val-'+k).innerText = "0");
             document.getElementById('up-target').value = "";
             document.getElementById('up-rp').value = "0";
             document.getElementById('up-park').checked = false;
@@ -194,39 +184,38 @@
             const t = document.getElementById('intel-search').value;
             const res = document.getElementById('intel-results');
             if(!t) return;
-            res.innerHTML = "<p style='margin-top:20px; color:#8b949e;'>Fetching Analytics...</p>";
+            res.innerHTML = "<p>Analyzing performance...</p>";
 
             try {
                 const r = await fetch(`${SCRIPT_URL}?${new URLSearchParams({ action:'intel', myTeam:sessionStorage.getItem('team'), myToken:sessionStorage.getItem('token'), target:t })}`);
                 const j = await r.json();
+                
                 if(j.success) {
                     const d = j.data;
-                    const history = Array.isArray(d.teleHistory) ? d.teleHistory : [];
+                    const history = d.teleHistory || [];
                     
-                    // --- LOGICA GENERARE GRAFIC LINIE (SVG) ---
-                    let svgContent = "";
+                    // Noul Chart Linie SVG
+                    let lineChart = "";
                     if(history.length > 0) {
                         const maxVal = Math.max(15, ...history);
-                        const points = history.map((val, i) => {
-                            const x = (i / (history.length > 1 ? history.length - 1 : 1)) * 100;
-                            const y = 100 - ((val / maxVal) * 100);
-                            return { x, y, val };
-                        });
+                        const pts = history.map((v, i) => ({
+                            x: (i / (history.length > 1 ? history.length - 1 : 1)) * 100,
+                            y: 100 - ((v / maxVal) * 100)
+                        }));
+                        let pathD = `M ${pts[0].x} ${pts[0].y}`;
+                        pts.forEach((p, i) => { if(i > 0) pathD += ` L ${p.x} ${p.y}`; });
                         
-                        let pathD = `M ${points[0].x} ${points[0].y}`;
-                        points.forEach((p, i) => { if(i > 0) pathD += ` L ${p.x} ${p.y}`; });
-                        
-                        svgContent = `
-                            <div class="chart-container">
+                        lineChart = `
+                            <div class="trend-container">
                                 <svg viewBox="-5 -5 110 110" class="chart-svg">
-                                    <path d="${pathD}" class="chart-line" style="stroke-dasharray: 600; stroke-dashoffset: 600; animation: drawLine 1.5s forwards;" />
-                                    ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="chart-point"><title>Pieces: ${p.val}</title></circle>`).join('')}
+                                    <path d="${pathD}" class="chart-line" style="stroke-dasharray: 500; stroke-dashoffset: 500; animation: drawLine 1.2s forwards;" />
+                                    ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="chart-point"></circle>`).join('')}
                                 </svg>
                             </div>`;
                     }
 
                     res.innerHTML = `
-                        <div style="margin-top:25px; text-align:left; animation: fadeIn 0.4s ease-out;">
+                        <div style="margin-top:20px; text-align:left;">
                             <h2 style="color:var(--yellow); border-bottom:1px solid #333;">TEAM ${d.target}</h2>
                             <div class="stat-grid">
                                 <div class="stat-card"><label>Avg Teleop</label><div>${d.avgTele}</div></div>
@@ -235,13 +224,12 @@
                             <label style="font-size:10px; color:#8b949e;">AUTO PERFORMANCE (MAX)</label>
                             <div class="auto-max-box">Red AP / DEP: <b>${d.maxAuto.rap} / ${d.maxAuto.rdep}</b></div>
                             <div class="auto-max-box">Blue AP / DEP: <b>${d.maxAuto.aap} / ${d.maxAuto.adep}</b></div>
-                            
-                            <label style="font-size:10px; color:#8b949e; margin-top:20px; display:block;">TELEOP SCORE TREND (LINE)</label>
-                            ${svgContent || '<p style="color:#555; font-size:11px; text-align:center;">No data available</p>'}
-                            <div style="font-size:9px; color:#555; text-align:center; margin-top:6px;">History Order: ${history.join(' → ') || 'None'}</div>
+                            <label style="font-size:10px; color:#8b949e; margin-top:15px; display:block;">TELEOP PIECES HISTORY (Trend)</label>
+                            ${lineChart}
+                            <div style="font-size:9px; color:#555; text-align:center; margin-top:4px;">Newest → ${history.join(' → ')}</div>
                         </div>`;
-                } else res.innerHTML = `<p style="color:#ff4d4d; margin-top:15px;">${j.msg}</p>`;
-            } catch(e) { res.innerHTML = "Error loading data."; }
+                } else res.innerHTML = `<p style="color:red; margin-top:10px;">${j.msg}</p>`;
+            } catch(e) { res.innerHTML = "Error fetching intel."; }
         }
 
         async function fetchDatabase() {
@@ -256,14 +244,14 @@
                     for(let i=1; i<j.table.length; i++){
                         h += '<tr>';
                         j.table[i].forEach((c, idx) => {
-                            if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                            if(idx === 8 && c) c = new Date(c).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             h += `<td>${c}</td>`;
                         });
                         h += '</tr>';
                     }
                     content.innerHTML = h + '</table>';
                 }
-            } catch(e) { content.innerHTML = "Error!"; }
+            } catch(e) { content.innerHTML = "Error."; }
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
