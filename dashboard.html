@@ -38,6 +38,41 @@
         .hidden { display: none !important; }
         
         @keyframes drawLine { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
+
+        /* --- STILURI NOI PENTRU FOOTER --- */
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+            margin: 0; 
+            align-items: center;
+        }
+        #app { flex: 1; display: flex; flex-direction: column; }
+        
+        .dashboard-footer {
+            width: 100%;
+            max-width: 480px; /* Aliniat cu lățimea aplicației */
+            padding: 20px 0;
+            text-align: center;
+            margin-top: auto; /* Împinge footerul jos de tot */
+        }
+        .footer-line {
+            height: 1px;
+            background: #30363d; /* Linia care taie ecranul */
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .btn-tos-discret {
+            color: #484f58;
+            text-decoration: none;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: color 0.3s;
+        }
+        .btn-tos-discret:hover {
+            color: #58a6ff;
+        }
     </style>
 </head>
 <body>
@@ -133,6 +168,11 @@
             <h2 style="color:white;">Uplink Sent!</h2>
             <p style="color:#8b949e">Cloud DB Syncing...</p>
         </div>
+        
+        <footer class="dashboard-footer">
+            <div class="footer-line"></div>
+            <a href="tos.html" class="btn-tos-discret">TOS & Contact</a>
+        </footer>
     </div>
 
     <script src="config.js"></script>
@@ -194,7 +234,6 @@
                     const d = j.data;
                     const history = d.teleHistory || [];
                     
-                    // Noul Chart Linie SVG
                     let lineChart = "";
                     if(history.length > 0) {
                         const maxVal = Math.max(15, ...history);
@@ -216,7 +255,7 @@
 
                     res.innerHTML = `
                         <div style="margin-top:20px; text-align:left;">
-                            <h2 style="color:var(--yellow); border-bottom:1px solid #333;">TEAM ${d.target}</h2>
+                            <h2 style="color:#f1e05a; border-bottom:1px solid #333;">TEAM ${d.target}</h2>
                             <div class="stat-grid">
                                 <div class="stat-card"><label>Avg Teleop</label><div>${d.avgTele}</div></div>
                                 <div class="stat-card"><label>Last 3 Avg</label><div>${d.avgLast3}</div></div>
