@@ -94,38 +94,44 @@
         }
 
         async function sendData() {
-            const target = document.getElementById('up-target').value;
-            if(!target) return alert("Enter Team ID!");
+    const target = document.getElementById('up-target').value;
+    if(!target) return alert("Enter Team ID!");
 
-            const btn = document.getElementById('btn-submit');
-            const pos = document.getElementById('auto-pos-select').value;
-            const isParked = document.getElementById('up-park.checked');
-            const pSuffix = document.getElementById('up-park').checked ? "(P)" : "";
-            
-            // Formatul tau x(x+y)(P)
-            const autoFormatted = `${stats.aS}(${stats.aS + stats.aM})${pSuffix}`;
+    const btn = document.getElementById('btn-submit');
+    const posKey = document.getElementById('auto-pos-select').value; // 'rap', 'rdep', etc.
+    const isParked = document.getElementById('up-park').checked;
+    const pSuffix = isParked ? "(P)" : "";
+    
+    // Construim string-ul de Auto
+    const autoFormatted = `${stats.aS}(${stats.aS + stats.aM})${pSuffix}`;
 
-            btn.innerText = "UPLINKING...";
-            btn.disabled = true;
+    btn.innerText = "UPLINKING...";
+    btn.disabled = true;
 
-            const params = new URLSearchParams({
-                action: 'uplink',
-                myTeam: sessionStorage.getItem('team'),
-                myToken: sessionStorage.getItem('token'),
-                target: target,
-                match: document.getElementById('up-match').value,
-                tele: stats.tS,
-                park: document.getElementById('up-park').checked ? "YES" : "NO",
-                [pos]: autoFormatted
-            });
+    // Trimitem datele curat
+    const params = new URLSearchParams({
+        action: 'uplink',
+        myTeam: sessionStorage.getItem('team'),
+        myToken: sessionStorage.getItem('token'),
+        target: target,
+        match: document.getElementById('up-match').value,
+        auto_type: posKey,      // Îi spunem scriptului ce coloană să updateze
+        auto_val: autoFormatted, // Valoarea de pus cu virgulă
+        tele: stats.tS,          // Se duce în coloana G
+        park: isParked ? "YES" : "NO"
+    });
 
-            try {
-                await fetch(`${SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' });
-                document.getElementById('page-scout').classList.add('hidden');
-                document.getElementById('success-screen').classList.remove('hidden');
-            } catch(e) { alert("Error!"); }
-            finally { btn.innerText = "GENERATE REPORT"; btn.disabled = false; }
-        }
+    try {
+        await fetch(`${SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' });
+        document.getElementById('page-scout').classList.add('hidden');
+        document.getElementById('success-screen').classList.remove('hidden');
+    } catch(e) { 
+        alert("Error!"); 
+    } finally { 
+        btn.innerText = "GENERATE REPORT"; 
+        btn.disabled = false; 
+    }
+}
 
         function resetScout() {
             stats = { aS: 0, aM: 0, tS: 0 };
