@@ -10,46 +10,32 @@
     <div class="card">
         <h1 class="logo">DECODE <span>Portal</span></h1>
         <h2>Create Account</h2>
-        <input type="number" id="team-id" placeholder="Team Number (ex: 17962)">
-        <input type="email" id="email-id" placeholder="Official Email">
-        <button onclick="handleSignup()" id="signup-btn">Create Account</button>
-        <p>Already have a token? <a href="login.html" style="color:#76c893">Login here</a></p>
+        <input type="number" id="team-id" placeholder="Team Number">
+        <input type="email" id="email-id" placeholder="Official Email Address">
+        <button onclick="handleSignup()">Create Account</button>
+        <p>Already have a token? <a href="login.html">Login here</a></p>
     </div>
-
     <script src="config.js"></script>
     <script>
-        function handleSignup() {
+        async function handleSignup() {
             const id = document.getElementById('team-id').value;
             const email = document.getElementById('email-id').value;
-            const btn = document.getElementById('signup-btn');
-
-            if(!id || !email) return alert("Please fill both fields!");
+            const btn = document.querySelector('button');
+            if (!id || !email) return alert("Please fill both fields.");
 
             btn.innerText = "Processing...";
             btn.disabled = true;
 
-            // Tehnica JSONP: Cream un script tag care cheama URL-ul Google
-            const script = document.createElement('script');
-            script.src = `${SCRIPT_URL}?action=register&teamId=${id}&email=${email}&callback=signupCallback`;
-            document.body.appendChild(script);
+            const url = `${SCRIPT_URL}?action=register&teamId=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`;
 
-            // Stergem scriptul dupa ce primim raspunsul pentru curatenie
-            script.onload = () => document.body.removeChild(script);
-            script.onerror = () => {
-                alert("Connection Error. Check your SCRIPT_URL in config.js");
-                btn.innerText = "Create Account";
-                btn.disabled = false;
-            };
-        }
-
-        // Aceasta functie este executata de Google Script
-        function signupCallback(data) {
-            const btn = document.getElementById('signup-btn');
-            if(data.success) {
-                alert("Account created successfully! Check your email for the token.");
+            try {
+                // no-cors trimite requestul, dar nu putem citi raspunsul
+                await fetch(url, { method: 'GET', mode: 'no-cors' });
+                alert("Request sent! Your token will arrive by email in 1-2 minutes.\n\nAfter receiving it, login with your Team Number + Token.");
                 window.location.href = "login.html";
-            } else {
-                alert("Error: " + data.msg);
+            } catch(e) {
+                alert("Connection Error. Please try again.");
+            } finally {
                 btn.innerText = "Create Account";
                 btn.disabled = false;
             }
