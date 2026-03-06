@@ -3,18 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DECODE - Dashboard v7</title>
+    <title>DECODE - Dashboard v7.5</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Database Scroll Fix */
         #db-content { width: 100%; overflow-x: auto; white-space: nowrap; }
         .db-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         .db-table th, .db-table td { padding: 10px; border: 1px solid #30363d; text-align: center; min-width: 90px; }
-        .db-table th { background: #21262d; color: #f1e05a; position: sticky; top: 0; }
-        .db-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .db-table th { background: #21262d; color: #f1e05a; }
+        
+        /* Mesaj temporar de succes */
+        .toast-success {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #238636;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div id="toast" class="toast-success">Uplink Successful! Resetting...</div>
+
     <div id="app" style="width: 100%; max-width: 480px;">
         <nav class="navbar">
             <button onclick="showPage('scout')">UPLINK</button>
@@ -75,7 +90,7 @@
 
                 <div class="input-group" style="margin-top: 15px;">
                     <label>RANKING POINTS (RP)</label>
-                    <input type="number" id="up-rp" value="0" style="border: 1px solid var(--primary);">
+                    <input type="number" id="up-rp" value="0">
                 </div>
 
                 <div class="checkbox-card">
@@ -89,58 +104,88 @@
 
         <div id="page-intel" class="page hidden">
             <div class="card-scout">
-                <div class="input-group">
-                    <label>SEARCH TEAM</label>
-                    <input type="number" id="intel-search" placeholder="Team ID">
-                </div>
+                <input type="number" id="intel-search" placeholder="Team ID">
                 <button onclick="fetchIntel()" class="btn-generate">SEARCH</button>
-                <div id="intel-results" style="margin-top: 15px;"></div>
+                <div id="intel-results"></div>
             </div>
         </div>
 
         <div id="page-records" class="page hidden">
-            <div class="card-scout">
-                <div id="db-content"></div>
-            </div>
+            <div class="card-scout"><div id="db-content"></div></div>
         </div>
 
         <div id="success-screen" class="page card hidden">
             <span class="checkmark">✓</span>
             <h2>Uplink Successful!</h2>
-            <button onclick="resetScout()" class="btn-generate">NEW REPORT</button>
+            <p>Form will reset in 3 seconds...</p>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script>
         let stats = { aS: 0, aM: 0, tS: 0 };
-        function updateVal(k, s) { stats[k] = Math.max(0, stats[k]+s); document.getElementById('val-'+k).innerText = stats[k]; }
-        function showPage(p) { document.querySelectorAll('.page').forEach(d => d.classList.add('hidden')); document.getElementById('page-'+p).classList.remove('hidden'); }
+
+        function updateVal(k, s) { 
+            stats[k] = Math.max(0, stats[k]+s); 
+            document.getElementById('val-'+k).innerText = stats[k]; 
+        }
+
+        function showPage(p) { 
+            document.querySelectorAll('.page').forEach(d => d.classList.add('hidden')); 
+            const targetId = p.includes('screen') || p.includes('page') ? p : 'page-'+p;
+            document.getElementById(targetId).classList.remove('hidden'); 
+        }
 
         async function sendData() {
             const target = document.getElementById('up-target').value;
-            if(!target) return alert("Baga Team ID!");
+            if(!target) return alert("Team ID missing!");
+            
             const btn = document.getElementById('btn-submit');
             const pos = document.getElementById('auto-pos-select').value;
             const park = document.getElementById('up-park').checked;
             const rp = document.getElementById('up-rp').value;
             const autoVal = `${stats.aS}(${stats.aS + stats.aM})${park ? "(P)" : ""}`;
 
-            btn.disabled = true; btn.innerText = "UPLINKING...";
+            btn.disabled = true; 
+            btn.innerText = "UPLINKING...";
 
-            const p = new URLSearchParams({
+            const params = new URLSearchParams({
                 action: 'uplink', myTeam: sessionStorage.getItem('team'), myToken: sessionStorage.getItem('token'),
                 target: target, match: document.getElementById('up-match').value,
                 auto_type: pos, auto_val: autoVal, tele: stats.tS, rp: rp
             });
 
-            // Trimitem si fortam succesul dupa 800ms
-            fetch(`${SCRIPT_URL}?${p.toString()}`, { mode: 'no-cors' });
-            
+            // Trimitem datele
+            fetch(`${SCRIPT_URL}?${params.toString()}`, { mode: 'no-cors' });
+
+            // LOGICA DE REFRESH AUTOMAT
             setTimeout(() => {
+                // 1. Afișăm ecranul de succes
                 showPage('success-screen');
-                btn.disabled = false; btn.innerText = "GENERATE REPORT";
-            }, 800);
+                
+                // 2. Resetăm formularul în fundal
+                resetScout(); 
+
+                // 3. După încă 3 secunde, ne întoarcem la UPLINK
+                setTimeout(() => {
+                    showPage('scout');
+                    btn.disabled = false; 
+                    btn.innerText = "GENERATE REPORT";
+                }, 3000);
+
+            }, 500);
+        }
+
+        function resetScout() {
+            stats = { aS: 0, aM: 0, tS: 0 };
+            ['aS','aM','tS'].forEach(k => document.getElementById('val-'+k).innerText = "0");
+            document.getElementById('up-target').value = "";
+            document.getElementById('up-rp').value = "0";
+            document.getElementById('up-park').checked = false;
+            
+            // Creștem automat numărul meciului cu 1 pentru următorul meci
+            const matchInput = document.getElementById('up-match');
+            if(matchInput.value) matchInput.value = parseInt(matchInput.value) + 1;
         }
 
         async function fetchIntel() {
@@ -152,7 +197,7 @@
                 const r = await fetch(`${SCRIPT_URL}?${p.toString()}`);
                 const j = await r.json();
                 if(j.success) {
-                    res.innerHTML = `<div style="border:1px solid #58a6ff; padding:15px; border-radius:8px;">
+                    res.innerHTML = `<div style="border:1px solid #58a6ff; padding:15px; border-radius:8px; margin-top:10px;">
                         <h3>TEAM ${j.data.target}</h3><hr>
                         <p>Matches: ${j.data.matches}</p>
                         <p>Teleop: ${j.data.tele}</p>
@@ -184,13 +229,6 @@
                     content.innerHTML = h + '</table>';
                 }
             } catch(e) { content.innerHTML = "Error!"; }
-        }
-
-        function resetScout() { 
-            stats={aS:0, aM:0, tS:0}; 
-            ['aS','aM','tS'].forEach(k=>document.getElementById('val-'+k).innerText="0"); 
-            document.getElementById('up-target').value=""; 
-            showPage('scout'); 
         }
 
         function logout() { sessionStorage.clear(); window.location.href="login.html"; }
